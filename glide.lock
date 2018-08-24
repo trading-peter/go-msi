@@ -1,6 +1,8 @@
-hash: ebc371608c61721e2c6b4a1728fcbe972ba7b103a4405104a78ea5c13c04a347
-updated: 2018-08-24T19:32:00.8361327+02:00
+hash: 86b33fd155a42fd819d7f3a98fccb7bf994b68c575fb39806415ad2d019a2d01
+updated: 2018-08-24T19:36:16.7751221+02:00
 imports:
+- name: github.com/gofrs/uuid
+  version: d41eeda0759468834c84365a32d1b1ec4264c75f
 - name: github.com/kardianos/osext
   version: ae77be60afb1dcacde03767a8c37337fad28ac14
 - name: github.com/kardianos/service
@@ -13,8 +15,6 @@ imports:
   - fastwalk
 - name: github.com/mh-cbon/stringexec
   version: bc348d279f975052c5169eedf4efb1bc0469453f
-- name: github.com/satori/go.uuid
-  version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
 - name: github.com/urfave/cli
   version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
 - name: golang.org/x/sys

@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 // WixManifest is the struct to decode a wix.json file.
@@ -216,31 +216,51 @@ func (wixFile *WixManifest) Load(p string) error {
 }
 
 //SetGuids generates and apply guid values appropriately
-func (wixFile *WixManifest) SetGuids(force bool) bool {
+func (wixFile *WixManifest) SetGuids(force bool) (bool, error) {
 	updated := false
 	if wixFile.UpgradeCode == "" || force {
-		wixFile.UpgradeCode = makeGUID()
+		guid, err := makeGUID()
+		if err != nil {
+			return updated, err
+		}
+		wixFile.UpgradeCode = guid
 		updated = true
 	}
 	if (wixFile.Env.GUID == "" || force) && len(wixFile.Env.Vars) > 0 {
-		wixFile.Env.GUID = makeGUID()
+		guid, err := makeGUID()
+		if err != nil {
+			return updated, err
+		}
+		wixFile.Env.GUID = guid
 		updated = true
 	}
 	for i, r := range wixFile.Registries {
 		if r.GUID == "" || force {
-			wixFile.Registries[i].GUID = makeGUID()
+			guid, err := makeGUID()
+			if err != nil {
+				return updated, err
+			}
+			wixFile.Registries[i].GUID = guid
 			updated = true
 		}
 	}
 	if (wixFile.Shortcuts.GUID == "" || force) && len(wixFile.Shortcuts.Items) > 0 {
-		wixFile.Shortcuts.GUID = makeGUID()
+		guid, err := makeGUID()
+		if err != nil {
+			return updated, err
+		}
+		wixFile.Shortcuts.GUID = guid
 		updated = true
 	}
-	return updated
+	return updated, nil
 }
 
-func makeGUID() string {
-	return strings.ToUpper(uuid.NewV4().String())
+func makeGUID() (string, error) {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return "", err
+	}
+	return strings.ToUpper(id.String()), nil
 }
 
 // NeedGUID tells if the manifest json file is missing guid values.

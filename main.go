@@ -502,7 +502,10 @@ func setGUID(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	updated := wixFile.SetGuids(force)
+	updated, err := wixFile.SetGuids(force)
+	if err != nil {
+		return err
+	}
 	if updated {
 		fmt.Println("The manifest was updated")
 	} else {
@@ -747,7 +750,9 @@ func quickMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	wixFile.SetGuids(false)
+	if _, err := wixFile.SetGuids(false); err != nil {
+		return cli.NewExitError(err.Error(), 1)
+	}
 
 	if err := os.RemoveAll(out); err != nil {
 		return cli.NewExitError(err.Error(), 1)
