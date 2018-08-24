@@ -1,4 +1,4 @@
-package: github.com/mh-cbon/go-msi/testing
+package: github.com/mat007/go-msi/testing
 import:
 - package: golang.org/x/sys
   subpackages:
