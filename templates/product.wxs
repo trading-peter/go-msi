@@ -45,7 +45,7 @@
       {{end}}
 
       {{range $i, $p := .Properties}}
-      <Property Id="{{$p.ID}}" {{if $p.Value}} Value="{{$p.Value}}" {{end}}>
+      <Property Id="{{$p.ID}}" {{if $p.Value}}Value="{{$p.Value}}"{{else if not $p.Registry}}Secure="yes"{{end}}>
          {{if $p.Registry}}
          <RegistrySearch Id="{{$p.ID}}Search" Root="{{$p.Registry.Root}}" Key="{{$p.Registry.Key}}"
             {{if gt ($p.Registry.Name | len) 0}} Name="{{$p.Registry.Name}}" {{end}} Type="raw"/>
@@ -93,7 +93,7 @@
         {{end}}
 
         {{range $i, $r := .Registries}}
-        <Component Id="RegistryEntries{{$i}}" Guid="{{$r.GUID}}">
+        <Component Id="RegistryEntries{{$i}}" Guid="*">
             <RegistryKey Root="{{$r.Root}}" Key="{{$r.Key}}">
                 {{range $j, $v := $r.Values}}
                 <RegistryValue Type="{{$v.Type}}" {{if gt ($v.Name | len) 0}} Name="{{$v.Name}}" {{end}} Value="{{$v.Value}}" {{if eq $i 0}}{{if eq $j 0}} KeyPath="yes" {{end}}{{end}}/>
@@ -102,30 +102,21 @@
         </Component>
         {{end}}
 
-         {{if gt (.Shortcuts.Items | len) 0}}
+         {{if gt (.Shortcuts | len) 0}}
          <Directory Id="ProgramMenuFolder">
             <Directory Id="ProgramMenuSubfolder" Name="{{.Product}}">
-               <Component Id="ApplicationShortcuts" Guid="{{.Shortcuts.GUID}}">
-               {{range $i, $e := .Shortcuts.Items}}
-                  <Shortcut Id="ApplicationShortcut{{$i}}"
-                        Name="{{$e.Name}}"
-                        Description="{{$e.Description}}"
-                        Target="{{$e.Target}}"
-                        WorkingDirectory="{{$e.WDir}}"
-                        {{if gt ($e.Arguments | len) 0}}
-                        Arguments="{{$e.Arguments}}"
-                        {{end}}
-                        >
-                        {{if gt ($e.Icon | len) 0}}
-                        <Icon Id="Icon{{$i}}" SourceFile="{{$e.Icon}}" />
-                        {{end}}
+               {{range $i, $e := .Shortcuts}}
+               <Component Id="ApplicationShortcuts{{$i}}" Guid="*">
+                  <Shortcut Id="ApplicationShortcut{{$i}}" Name="{{$e.Name}}" Description="{{$e.Description}}" Target="{{$e.Target}}" WorkingDirectory="{{$e.WDir}}"
+                        {{if gt ($e.Arguments | len) 0}}Arguments="{{$e.Arguments}}"{{end}}>
+                        {{if gt ($e.Icon | len) 0}}<Icon Id="Icon{{$i}}" SourceFile="{{$e.Icon}}"/>{{end}}
                   </Shortcut>
-                  <RegistryValue Root="HKCU"
-                    Key="Software\{{$.Company}}\{{$.Product}}"
-                    Name="installed{{$i}}"
-                    Type="integer" Value="1" KeyPath="yes"/>
-                {{end}}
-                <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
+                  <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
+               </Component>
+               {{end}}
+               <Component Id="RemoveApplicationShortcuts" Guid="*">
+                  <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
+                  <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Type="string" Value="" KeyPath="yes"/>
                </Component>
             </Directory>
          </Directory>
@@ -165,8 +156,11 @@
          {{range $i, $r := .Registries}}
          <ComponentRef Id="RegistryEntries{{$i}}" />
          {{end}}
-         {{if gt (.Shortcuts.Items | len) 0}}
-         <ComponentRef Id="ApplicationShortcuts"/>
+         {{if gt (.Shortcuts | len) 0}}
+         {{range $i, $e := .Shortcuts}}
+         <ComponentRef Id="ApplicationShortcuts{{$i}}"/>
+         {{end}}
+         <ComponentRef Id="RemoveApplicationShortcuts"/>
          {{end}}
          {{range $i, $e := .Directories}}
          <ComponentGroupRef Id="AppFiles{{$i}}" />

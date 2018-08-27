@@ -21,50 +21,6 @@ import (
 )
 
 func main() {
-	testHello()
-	testCondition()
-	fmt.Println("\nSuccess!")
-}
-
-func testCondition() {
-	confirm(rmFile("log-install.txt"), "install log removal")
-	confirm(rmFile("log-uninstall.txt"), "uninstall log removal")
-
-	gopath := os.Getenv("GOPATH")
-	wd := makeDir(filepath.Join(gopath, "src/github.com/mat007/go-msi/testing/condition"))
-	mustChdir(wd)
-
-	setup := makeCmd("C:/go-msi/go-msi.exe", "set-guid")
-	mustExec(setup, "Packaging setup failed %v")
-
-	msi := "condition.msi"
-	pkg := makeCmd("C:/go-msi/go-msi.exe", "make",
-		"--msi", msi,
-		"--version", "0.0.1",
-		"--arch", "amd64",
-		"--keep",
-	)
-	mustExec(pkg, "Packaging failed %v")
-
-	resultPackage := makeFile(msi)
-	mustExist(resultPackage, "Package file is missing %v")
-
-	packageInstall := makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt")
-	mustFail(packageInstall.Exec(), "Package installation succeeded %v")
-	content := readLog("log-install.txt")
-	mustContain(content, "Product: condition -- some condition message")
-	mustContain(content, "Product: condition -- Installation failed")
-	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
-}
-
-func mustContain(s, substr string) {
-	if strings.Index(s, substr) == -1 {
-		log.Println(s)
-		log.Fatalf("Failed to find %q", substr)
-	}
-}
-
-func testHello() {
 	confirm(rmFile("log-install.txt"), "install log removal")
 	confirm(rmFile("log-uninstall.txt"), "uninstall log removal")
 
@@ -97,7 +53,14 @@ func testHello() {
 
 	mustNotHaveWindowsService("HelloSvc")
 
-	packageInstall := makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt")
+	packageInstall := makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt", "MINIMUMBUILD=0")
+	mustFail(packageInstall.Exec(), "Package installation succeeded")
+	content := readLog("log-install.txt")
+	mustContain(content, "Product: hello -- some condition message")
+	mustContain(content, "Product: hello -- Installation failed")
+	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
+
+	packageInstall = makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt")
 	mustExec(packageInstall, "Package installation failed %v")
 	readFile("log-install.txt")
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
@@ -177,6 +140,7 @@ func testHello() {
 	// mustShowEnv("$env:path")
 	// mustEnvEq("$env:some", "")
 
+	fmt.Println("\nSuccess!")
 }
 
 func mustHaveWindowsService(n string) (*mgr.Mgr, *mgr.Service) {
@@ -300,6 +264,12 @@ func mustFail(err error, format ...string) {
 			msg = format[0]
 		}
 		log.Fatal(msg)
+	}
+}
+func mustContain(s, substr string) {
+	if strings.Index(s, substr) == -1 {
+		log.Println(s)
+		log.Fatalf("Failed to find %q", substr)
 	}
 }
 func mustShowEnv(e string) {
