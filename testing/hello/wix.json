@@ -43,7 +43,6 @@
   },
   "registries": [
     {
-      "guid": "",
       "path": "HKCU\\Software\\mh-cbon\\hello",
       "values": [
         {
@@ -57,18 +56,16 @@
       ]
     }
   ],
-  "shortcuts": {
-    "guid": "",
-    "items": [
-      {
-        "name": "hello",
-        "description": "hello web server",
-        "target": "[INSTALLDIR]hello.exe",
-        "wdir": "INSTALLDIR",
-        "icon":"ico.ico"
-      }
-    ]
-  },
+  "shortcuts": [
+    {
+      "name": "hello",
+      "description": "hello web server",
+      "target": "[INSTALLDIR]hello.exe",
+      "wdir": "INSTALLDIR",
+      "arguments": "",
+      "icon": "ico.ico"
+    }
+  ],
   "choco": {
     "description": "hello program",
     "project-url": "https://github.com/mh-cbon/go-msi/tree/master/testing",

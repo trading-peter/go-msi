@@ -93,7 +93,7 @@
         {{end}}
 
         {{range $i, $r := .Registries}}
-        <Component Id="RegistryEntries{{$i}}" Guid="{{$r.GUID}}">
+        <Component Id="RegistryEntries{{$i}}" Guid="*">
             <RegistryKey Root="{{$r.Root}}" Key="{{$r.Key}}">
                 {{range $j, $v := $r.Values}}
                 <RegistryValue Type="{{$v.Type}}" {{if gt ($v.Name | len) 0}} Name="{{$v.Name}}" {{end}} Value="{{$v.Value}}" {{if eq $i 0}}{{if eq $j 0}} KeyPath="yes" {{end}}{{end}}/>
@@ -102,11 +102,11 @@
         </Component>
         {{end}}
 
-         {{if gt (.Shortcuts.Items | len) 0}}
+         {{if gt (.Shortcuts | len) 0}}
          <Directory Id="ProgramMenuFolder">
             <Directory Id="ProgramMenuSubfolder" Name="{{.Product}}">
-               <Component Id="ApplicationShortcuts" Guid="{{.Shortcuts.GUID}}">
-               {{range $i, $e := .Shortcuts.Items}}
+               <Component Id="ApplicationShortcuts" Guid="*">
+               {{range $i, $e := .Shortcuts}}
                   <Shortcut Id="ApplicationShortcut{{$i}}"
                         Name="{{$e.Name}}"
                         Description="{{$e.Description}}"
@@ -165,7 +165,7 @@
          {{range $i, $r := .Registries}}
          <ComponentRef Id="RegistryEntries{{$i}}" />
          {{end}}
-         {{if gt (.Shortcuts.Items | len) 0}}
+         {{if gt (.Shortcuts | len) 0}}
          <ComponentRef Id="ApplicationShortcuts"/>
          {{end}}
          {{range $i, $e := .Directories}}

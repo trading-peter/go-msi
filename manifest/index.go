@@ -32,7 +32,7 @@ type WixManifest struct {
 	RelDirs        []string       `json:"-"`
 	Env            WixEnvList     `json:"env"`
 	Registries     []RegistryItem `json:"registries,omitempty"`
-	Shortcuts      WixShortcuts   `json:"shortcuts"`
+	Shortcuts      []Shortcut     `json:"shortcuts,omitempty"`
 	Choco          ChocoSpec      `json:"choco"`
 	Hooks          []Hook         `json:"hooks,omitempty"`
 	InstallHooks   []Hook         `json:"-"`
@@ -148,14 +148,8 @@ type WixEnv struct {
 	Part      string `json:"part"`
 }
 
-// WixShortcuts is the struct to decode shortcuts key of the wix.json file.
-type WixShortcuts struct {
-	GUID  string        `json:"guid,omitempty"`
-	Items []WixShortcut `json:"items,omitempty"`
-}
-
-// WixShortcut is the struct to decode shortcut value of the wix.json file.
-type WixShortcut struct {
+// Shortcut is the struct to decode shortcut value of the wix.json file.
+type Shortcut struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Target      string `json:"target"`
@@ -167,7 +161,6 @@ type WixShortcut struct {
 // RegistryItem is the struct to decode a registry item.
 type RegistryItem struct {
 	Registry
-	GUID   string          `json:"guid,omitempty"`
 	Values []RegistryValue `json:"values,omitempty"`
 }
 
@@ -234,24 +227,6 @@ func (wixFile *WixManifest) SetGuids(force bool) (bool, error) {
 		wixFile.Env.GUID = guid
 		updated = true
 	}
-	for i, r := range wixFile.Registries {
-		if r.GUID == "" || force {
-			guid, err := makeGUID()
-			if err != nil {
-				return updated, err
-			}
-			wixFile.Registries[i].GUID = guid
-			updated = true
-		}
-	}
-	if (wixFile.Shortcuts.GUID == "" || force) && len(wixFile.Shortcuts.Items) > 0 {
-		guid, err := makeGUID()
-		if err != nil {
-			return updated, err
-		}
-		wixFile.Shortcuts.GUID = guid
-		updated = true
-	}
 	return updated, nil
 }
 
@@ -269,14 +244,6 @@ func (wixFile *WixManifest) NeedGUID() bool {
 		return true
 	}
 	if wixFile.Env.GUID == "" && len(wixFile.Env.Vars) > 0 {
-		return true
-	}
-	for _, r := range wixFile.Registries {
-		if r.GUID == "" {
-			return true
-		}
-	}
-	if wixFile.Shortcuts.GUID == "" && len(wixFile.Shortcuts.Items) > 0 {
 		return true
 	}
 	return false
@@ -313,13 +280,13 @@ func (wixFile *WixManifest) RewriteFilePaths(out string) error {
 		}
 		wixFile.RelDirs = append(wixFile.RelDirs, path)
 	}
-	for i, s := range wixFile.Shortcuts.Items {
+	for i, s := range wixFile.Shortcuts {
 		if s.Icon != "" {
 			path, err := rewrite(out, s.Icon)
 			if err != nil {
 				return err
 			}
-			wixFile.Shortcuts.Items[i].Icon = path
+			wixFile.Shortcuts[i].Icon = path
 		}
 	}
 	return nil
