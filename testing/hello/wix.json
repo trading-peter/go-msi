@@ -78,5 +78,24 @@
       "when": "install",
       "return": "ignore"
     }
+  ],
+  "properties": [
+    {
+      "id": "CURRENTBUILD",
+      "registry": {
+        "path": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+        "name": "CurrentBuild"
+      }
+    },
+    {
+      "id": "MINIMUMBUILD",
+      "value": "99999"
+    }
+  ],
+  "conditions": [
+    {
+      "condition": "Installed OR (CURRENTBUILD \u003c MINIMUMBUILD)",
+      "message": "some condition message"
+    }
   ]
 }
