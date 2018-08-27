@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
@@ -60,9 +61,9 @@ func main() {
 	mustContain(content, "Product: hello -- Installation failed")
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
-	packageInstall = makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt")
+	packageInstall = makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt", "REGISTRY_CONDITION=1", "SHORTCUT_CONDITION=1")
 	mustExec(packageInstall, "Package installation failed %v")
-	readFile("log-install.txt")
+	readLog("log-install.txt")
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
 	// mustShowEnv("$env:path")
@@ -72,6 +73,12 @@ func main() {
 	mustRegEq(`HKCU\Software\mh-cbon\hello`, "Version", "some version")
 	mustShowReg(`HKCU\Software\mh-cbon\hello`, "InstallDir")
 	mustRegEq(`HKCU\Software\mh-cbon\hello`, "InstallDir", `C:\Program Files\hello`)
+	mustShowReg(`HKCU\Software\mh-cbon\hello`, "Condition")
+	mustRegEq(`HKCU\Software\mh-cbon\hello`, "Condition", "mh-cbon")
+
+	readDir("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello")
+	mustExist(makeFile("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello/hello.lnk"), "Shortcut link is missing %v")
+	mustExist(makeFile("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello/condition.lnk"), "Shortcut link is missing %v")
 
 	readDir("C:/Program Files/hello")
 	readDir("C:/Program Files/hello/assets")
@@ -88,9 +95,9 @@ func main() {
 	mustSucceed(helloSvc.Close(), "Failed to close the service %v")
 	mgr.Disconnect()
 
-	packageInstallUninstall := makeCmd("msiexec", "/x", msi, "/q", "/log", "log-uninstall.txt")
-	mustExec(packageInstallUninstall, "hello package uninstall failed %v")
-	readFile("log-uninstall.txt")
+	packageUninstall := makeCmd("msiexec", "/x", msi, "/q", "/log", "log-uninstall.txt")
+	mustExec(packageUninstall, "hello package uninstall failed %v")
+	readLog("log-uninstall.txt")
 	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
 
 	mustNotHaveWindowsService("HelloSvc")
@@ -99,6 +106,9 @@ func main() {
 	// mustEnvEq("$env:some", "")
 
 	mustNoReg(`HKCU\Software\mh-cbon\hello`, "Version")
+	mustNoReg(`HKCU\Software\mh-cbon\hello`, "InstallDir")
+
+	mustNotExist(makeFile("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello"), "Shortcut link not removed %v")
 
 	helloChocoPkg := makeCmd("C:/go-msi/go-msi.exe", "choco",
 		"--input", msi,
@@ -288,13 +298,6 @@ func maybeShowEnv(e string) *cmdExec {
 	log.Printf("showEnv ok %v %q", e, psShowEnv.Stdout())
 	return psShowEnv
 }
-func mustLookPath(search string) string {
-	path, err := exec.LookPath(search)
-	mustSucceed(err, fmt.Sprintf("lookPath failed %q\n%%v", search))
-	path = filepath.Clean(path)
-	log.Printf("lookPath ok %v=%q", search, path)
-	return path
-}
 func mustChdir(s fmt.Stringer) {
 	path := filepath.Clean(s.String())
 	mustSucceed(os.Chdir(path), fmt.Sprintf("chDir failed %q\n%%v", path))
@@ -408,6 +411,12 @@ func mustExist(e exister, format ...string) {
 		format[0] = fmt.Sprintf("mustExist err: %T does not exist %q, got %%v", e, e)
 	}
 	mustSucceed(isTrue(e.exists(), format[0]))
+}
+func mustNotExist(e exister, format ...string) {
+	if len(format) < 1 {
+		format[0] = fmt.Sprintf("mustNotExist err: %T exists %q, got %%v", e, e)
+	}
+	mustFail(isTrue(e.exists(), format[0]))
 }
 
 func isTrue(b bool, format ...string) error {
@@ -587,7 +596,11 @@ func (e *cmdExec) ExitOk() bool {
 
 func makeCmd(w string, a ...string) *cmdExec {
 	log.Printf("makeCmd: %v %v\n", w, a)
-	cmd := exec.Command(mustLookPath(w), a...)
+	cmd := exec.Command(w, a...)
+	if w == "msiexec" {
+		// see https://github.com/golang/go/issues/15566
+		cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: " " + strings.Join(a, " ")}
+	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout

@@ -54,6 +54,16 @@
           "value": "[INSTALLDIR]"
         }
       ]
+    },
+    {
+      "path": "HKCU\\Software\\mh-cbon\\hello",
+      "values": [
+        {
+          "name": "Condition",
+          "value": "mh-cbon"
+        }
+      ],
+      "condition": "REGISTRY_CONDITION"
     }
   ],
   "shortcuts": [
@@ -64,6 +74,15 @@
       "wdir": "INSTALLDIR",
       "arguments": "",
       "icon": "ico.ico"
+    },
+    {
+      "name": "condition",
+      "description": "shortcut on condition",
+      "target": "[INSTALLDIR]hello.exe",
+      "wdir": "INSTALLDIR",
+      "arguments": "",
+      "icon": "ico.ico",
+      "condition": "SHORTCUT_CONDITION"
     }
   ],
   "choco": {
@@ -90,6 +109,12 @@
     {
       "id": "MINIMUMBUILD",
       "value": "99999"
+    },
+    {
+      "id": "REGISTRY_CONDITION"
+    },
+    {
+      "id": "SHORTCUT_CONDITION"
     }
   ],
   "conditions": [

@@ -150,18 +150,20 @@ type WixEnv struct {
 
 // Shortcut is the struct to decode shortcut value of the wix.json file.
 type Shortcut struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Target      string `json:"target"`
-	WDir        string `json:"wdir"`
-	Arguments   string `json:"arguments"`
-	Icon        string `json:"icon"` // a path to the ico file, no space in it.
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Target      string  `json:"target"`
+	WDir        string  `json:"wdir"`
+	Arguments   string  `json:"arguments"`
+	Icon        string  `json:"icon"` // a path to the ico file, no space in it.
+	Condition   *string `json:"condition,omitempty"`
 }
 
 // RegistryItem is the struct to decode a registry item.
 type RegistryItem struct {
 	Registry
-	Values []RegistryValue `json:"values,omitempty"`
+	Values    []RegistryValue `json:"values,omitempty"`
+	Condition *string         `json:"condition,omitempty"`
 }
 
 // RegistryValue is the struct to decode a registry value.

@@ -99,6 +99,7 @@
                 <RegistryValue Type="{{$v.Type}}" {{if gt ($v.Name | len) 0}} Name="{{$v.Name}}" {{end}} Value="{{$v.Value}}" {{if eq $i 0}}{{if eq $j 0}} KeyPath="yes" {{end}}{{end}}/>
                 {{end}}
             </RegistryKey>
+            {{if $r.Condition}}<Condition><![CDATA[{{$r.Condition}}]]></Condition>{{end}}
         </Component>
         {{end}}
 
@@ -112,6 +113,7 @@
                         {{if gt ($e.Icon | len) 0}}<Icon Id="Icon{{$i}}" SourceFile="{{$e.Icon}}"/>{{end}}
                   </Shortcut>
                   <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
+                  {{if $e.Condition}}<Condition><![CDATA[{{$e.Condition}}]]></Condition>{{end}}
                </Component>
                {{end}}
                <Component Id="RemoveApplicationShortcuts" Guid="*">
