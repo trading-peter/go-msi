@@ -105,27 +105,18 @@
          {{if gt (.Shortcuts | len) 0}}
          <Directory Id="ProgramMenuFolder">
             <Directory Id="ProgramMenuSubfolder" Name="{{.Product}}">
-               <Component Id="ApplicationShortcuts" Guid="*">
                {{range $i, $e := .Shortcuts}}
-                  <Shortcut Id="ApplicationShortcut{{$i}}"
-                        Name="{{$e.Name}}"
-                        Description="{{$e.Description}}"
-                        Target="{{$e.Target}}"
-                        WorkingDirectory="{{$e.WDir}}"
-                        {{if gt ($e.Arguments | len) 0}}
-                        Arguments="{{$e.Arguments}}"
-                        {{end}}
-                        >
-                        {{if gt ($e.Icon | len) 0}}
-                        <Icon Id="Icon{{$i}}" SourceFile="{{$e.Icon}}" />
-                        {{end}}
+               <Component Id="ApplicationShortcuts{{$i}}" Guid="*">
+                  <Shortcut Id="ApplicationShortcut{{$i}}" Name="{{$e.Name}}" Description="{{$e.Description}}" Target="{{$e.Target}}" WorkingDirectory="{{$e.WDir}}"
+                        {{if gt ($e.Arguments | len) 0}}Arguments="{{$e.Arguments}}"{{end}}>
+                        {{if gt ($e.Icon | len) 0}}<Icon Id="Icon{{$i}}" SourceFile="{{$e.Icon}}"/>{{end}}
                   </Shortcut>
-                  <RegistryValue Root="HKCU"
-                    Key="Software\{{$.Company}}\{{$.Product}}"
-                    Name="installed{{$i}}"
-                    Type="integer" Value="1" KeyPath="yes"/>
-                {{end}}
-                <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
+                  <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
+               </Component>
+               {{end}}
+               <Component Id="RemoveApplicationShortcuts" Guid="*">
+                  <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
+                  <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Type="string" Value="" KeyPath="yes"/>
                </Component>
             </Directory>
          </Directory>
@@ -166,7 +157,10 @@
          <ComponentRef Id="RegistryEntries{{$i}}" />
          {{end}}
          {{if gt (.Shortcuts | len) 0}}
-         <ComponentRef Id="ApplicationShortcuts"/>
+         {{range $i, $e := .Shortcuts}}
+         <ComponentRef Id="ApplicationShortcuts{{$i}}"/>
+         {{end}}
+         <ComponentRef Id="RemoveApplicationShortcuts"/>
          {{end}}
          {{range $i, $e := .Directories}}
          <ComponentGroupRef Id="AppFiles{{$i}}" />
