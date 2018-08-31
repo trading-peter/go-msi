@@ -20,7 +20,8 @@
         "name": "HelloSvc",
         "start": "auto",
         "display-name": "Hello!",
-        "description": "The hello service"
+        "description": "The hello service",
+        "arguments": "v[ProductVersion]"
       }
     }
   ],
