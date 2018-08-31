@@ -10,8 +10,7 @@
     "support-telephone": "555-123456789",
     "support-link": "http://example.com/support",
     "update-info-link": "http://example.com/update",
-    "readme": "[INSTALLDIR]readme.txt",
-    "size": 123456
+    "readme": "[INSTALLDIR]readme.txt"
   },
   "upgrade-code": "",
   "files": [

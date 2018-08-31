@@ -18,8 +18,7 @@ import (
 type WixManifest struct {
 	Product        string         `json:"product"`
 	Company        string         `json:"company"`
-	Version        string         `json:"version,omitempty"`
-	VersionOk      string         `json:"-"`
+	Version        Version        `json:"-"`
 	License        string         `json:"license,omitempty"`
 	Banner         string         `json:"banner,omitempty"`
 	Dialog         string         `json:"dialog,omitempty"`
@@ -41,6 +40,17 @@ type WixManifest struct {
 	Conditions     []Condition    `json:"conditions,omitempty"`
 }
 
+// Version stores version related data in various formats.
+type Version struct {
+	SemVer  string
+	Display string
+	MSI     string
+	Major   int64
+	Minor   int64
+	Build   int64
+	Hex     int64
+}
+
 // Info lists the control panel program information.
 // Each member data is named after the matching column name in the uninstall
 // program list.
@@ -52,7 +62,7 @@ type Info struct {
 	SupportLink      string `json:"support-link,omitempty"`
 	UpdateInfoLink   string `json:"update-info-link,omitempty"`
 	Readme           string `json:"readme,omitempty"`
-	Size             uint64 `json:"size,omitempty"` // in kilobytes
+	Size             int64  `json:"-"` // in kilobytes
 }
 
 // File is the struct to decode a file.
@@ -305,17 +315,25 @@ func rewrite(out, path string) (string, error) {
 // It applies defaults values on the wix/msi property generate the msi package.
 // It applies defaults values on the choco property to generate a nuget package.
 func (wixFile *WixManifest) Normalize() error {
-	wixFile.VersionOk = wixFile.Version
+	if wixFile.Version.Display == "" {
+		wixFile.Version.Display = wixFile.Version.SemVer
+	}
+	wixFile.Version.MSI = wixFile.Version.SemVer
 	// Wix version Field of Product element
 	// does not support semver strings
 	// it supports only something like x.x.x.x
 	// So, if the version has metadata/prerelease values,
 	// lets get ride of those and save the workable version
-	// into VersionOk field
-	v, err := semver.NewVersion(wixFile.Version)
-	if err == nil {
-		wixFile.VersionOk = v.String()
+	// into Version.MSI field
+	v, err := semver.NewVersion(wixFile.Version.SemVer)
+	if err != nil {
+		return fmt.Errorf("Failed to parse version '%v': %v", wixFile.Version.SemVer, err)
 	}
+	wixFile.Version.MSI = v.String()
+	wixFile.Version.Major = v.Major()
+	wixFile.Version.Minor = v.Minor()
+	wixFile.Version.Build = v.Patch()
+	wixFile.Version.Hex = v.Major()>>6 + v.Minor()>>4 + v.Patch()
 
 	if wixFile.Banner != "" {
 		path, err := filepath.Abs(wixFile.Banner)
@@ -410,6 +428,26 @@ func (wixFile *WixManifest) Normalize() error {
 		}
 	}
 
+	// Compute install size
+	var size int64
+	for _, file := range wixFile.Files {
+		info, err := os.Stat(file.Path)
+		if err != nil {
+			return err
+		}
+		size += info.Size()
+	}
+	for _, dir := range wixFile.Directories {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			size += info.Size()
+			return err
+		})
+		if err != nil {
+			return err
+		}
+	}
+	wixFile.Info.Size = size >> 10
+
 	return nil
 }
 
@@ -419,4 +457,12 @@ func extractRegistry(path string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid registry path %q", p)
 	}
 	return p[0], strings.Join(p[1:], `\`), nil
+}
+
+func makeRegistryValue(name, typ, value string) RegistryValue {
+	return RegistryValue{
+		Name:  name,
+		Type:  typ,
+		Value: value,
+	}
 }

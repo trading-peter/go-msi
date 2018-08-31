@@ -129,6 +129,10 @@ func main() {
 					Usage: "The version of your program",
 				},
 				cli.StringFlag{
+					Name:  "display",
+					Usage: "The display version of your program",
+				},
+				cli.StringFlag{
 					Name:  "license, l",
 					Usage: "Path to the license file",
 				},
@@ -253,6 +257,10 @@ func main() {
 				cli.StringFlag{
 					Name:  "version",
 					Usage: "The version of your program",
+				},
+				cli.StringFlag{
+					Name:  "display",
+					Usage: "The display version of your program",
 				},
 				cli.StringFlag{
 					Name:  "license, l",
@@ -526,6 +534,7 @@ func generateTemplates(c *cli.Context) error {
 	src := c.String("src")
 	out := c.String("out")
 	version := c.String("version")
+	display := c.String("display")
 	license := c.String("license")
 	properties := c.StringSlice("property")
 
@@ -542,9 +551,8 @@ func generateTemplates(c *cli.Context) error {
 		return cli.NewExitError("Cannot proceed, manifest file is incomplete", 1)
 	}
 
-	if c.IsSet("version") {
-		wixFile.Version = version
-	}
+	wixFile.Version.SemVer = version
+	wixFile.Version.Display = display
 
 	if c.IsSet("license") {
 		wixFile.License = license
@@ -734,6 +742,7 @@ func quickMake(c *cli.Context) error {
 	src := c.String("src")
 	out := c.String("out")
 	version := c.String("version")
+	display := c.String("display")
 	license := c.String("license")
 	properties := c.StringSlice("property")
 	msi := c.String("msi")
@@ -761,9 +770,8 @@ func quickMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	if c.IsSet("version") {
-		wixFile.Version = version
-	}
+	wixFile.Version.SemVer = version
+	wixFile.Version.Display = display
 
 	if c.IsSet("license") {
 		wixFile.License = license
@@ -897,9 +905,7 @@ func chocoMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	if c.IsSet("version") {
-		wixFile.Version = version
-	}
+	wixFile.Version.SemVer = version
 
 	if err := wixFile.Normalize(); err != nil {
 		return cli.NewExitError(err.Error(), 1)
@@ -969,8 +975,8 @@ func chocoMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	SrcNupkg := fmt.Sprintf("%s\\%s.%s.nupkg", out, wixFile.Choco.ID, wixFile.VersionOk)
-	DstNupkg := fmt.Sprintf("%s.%s.nupkg", wixFile.Choco.ID, wixFile.Version)
+	SrcNupkg := fmt.Sprintf("%s\\%s.%s.nupkg", out, wixFile.Choco.ID, wixFile.Version.MSI)
+	DstNupkg := fmt.Sprintf("%s.%s.nupkg", wixFile.Choco.ID, wixFile.Version.SemVer)
 
 	if err = util.CopyFile(DstNupkg, SrcNupkg); err != nil {
 		return cli.NewExitError(err.Error(), 1)

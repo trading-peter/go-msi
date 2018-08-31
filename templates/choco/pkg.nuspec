@@ -3,7 +3,7 @@
   <metadata>
     <id>{{.Choco.ID}}</id>
     <title>{{.Choco.Title}}</title>
-    <version>{{.VersionOk}}</version>
+    <version>{{.Version.MSI}}</version>
     <authors>{{.Choco.Authors}}</authors>
     <owners>{{.Choco.Owners}}</owners>
     <description>{{.Choco.Description}}</description>

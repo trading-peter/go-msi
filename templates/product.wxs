@@ -12,36 +12,42 @@
 
    <Product Id="*" UpgradeCode="{{.UpgradeCode}}"
             Name="{{.Product}}"
-            Version="{{.VersionOk}}"
+            Version="{{.Version.MSI}}"
             Manufacturer="{{.Company}}"
             Language="1033">
 
-      <Package InstallerVersion="200" Compressed="yes" Description="{{.Product}} {{.Version}}"
-               Comments="This installs {{.Product}} {{.Version}}" InstallScope="perMachine"/>
+      <Package InstallerVersion="200" Compressed="yes" Description="{{.Product}} {{.Version.Display}}"
+               Comments="This installs {{.Product}} {{.Version.Display}}" InstallScope="perMachine"/>
 
       <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
 
       <Upgrade Id="{{.UpgradeCode}}">
-         <UpgradeVersion Minimum="{{.VersionOk}}" OnlyDetect="yes" Property="NEWERVERSIONDETECTED"/>
-         <UpgradeVersion Minimum="0.0.0" Maximum="{{.VersionOk}}" IncludeMinimum="yes" IncludeMaximum="no"
+         <UpgradeVersion Minimum="{{.Version.MSI}}" OnlyDetect="yes" Property="NEWERVERSIONDETECTED"/>
+         <UpgradeVersion Minimum="0.0.0" Maximum="{{.Version.MSI}}" IncludeMinimum="yes" IncludeMaximum="no"
                          Property="OLDERVERSIONBEINGUPGRADED"/>
       </Upgrade>
       <Condition Message="A newer version of this software is already installed.">NOT NEWERVERSIONDETECTED</Condition>
 
       {{if gt (.Banner | len) 0 }} <WixVariable Id="WixUIBannerBmp" Value="{{.Banner}}"/> {{end}}
       {{if gt (.Dialog | len) 0 }} <WixVariable Id="WixUIDialogBmp" Value="{{.Dialog}}"/> {{end}}
+
       {{if gt (.Icon | len) 0 }}
-      <Icon Id="InstallerIco" SourceFile="{{.Icon}}"/>
-      <Property Id="ARPPRODUCTICON" Value="InstallerIco"/>
+      <Icon Id="Installer.Ico" SourceFile="{{.Icon}}"/>
+      <Property Id="ARPPRODUCTICON" Value="Installer.Ico"/>
       {{end}}
-      {{if .Info}}
-      {{if gt (.Info.Comments | len) 0 }} <Property Id='ARPCOMMENTS'>{{.Info.Comments}}</Property> {{end}}
-      {{if gt (.Info.Contact | len) 0 }} <Property Id='ARPCONTACT'>{{.Info.Contact}}</Property> {{end}}
-      {{if gt (.Info.HelpLink | len) 0 }} <Property Id='ARPHELPLINK'>{{.Info.HelpLink}}</Property> {{end}}
-      {{if gt (.Info.SupportLink | len) 0 }} <Property Id='ARPURLINFOABOUT'>{{.Info.SupportLink}}</Property> {{end}}
-      {{if gt (.Info.UpdateInfoLink | len) 0 }} <Property Id='ARPURLUPDATEINFO'>{{.Info.UpdateInfoLink}}</Property> {{end}}
-      {{if gt (.Info.SupportTelephone | len) 0 }} <Property Id='ARPHELPTELEPHONE'>{{.Info.SupportTelephone}}</Property> {{end}}
-      {{if gt .Info.Size 0 }} <Property Id='ARPSIZE'>{{.Info.Size}}</Property> {{end}}
+      {{if eq .Version.MSI .Version.Display}}
+        {{if .Info}}
+        {{if gt (.Info.Comments | len) 0 }} <Property Id='ARPCOMMENTS'>{{.Info.Comments}}</Property> {{end}}
+        {{if gt (.Info.Contact | len) 0 }} <Property Id='ARPCONTACT'>{{.Info.Contact}}</Property> {{end}}
+        {{if gt (.Info.HelpLink | len) 0 }} <Property Id='ARPHELPLINK'>{{.Info.HelpLink}}</Property> {{end}}
+        {{if gt (.Info.SupportLink | len) 0 }} <Property Id='ARPURLINFOABOUT'>{{.Info.SupportLink}}</Property> {{end}}
+        {{if gt (.Info.UpdateInfoLink | len) 0 }} <Property Id='ARPURLUPDATEINFO'>{{.Info.UpdateInfoLink}}</Property> {{end}}
+        {{if gt (.Info.SupportTelephone | len) 0 }} <Property Id='ARPHELPTELEPHONE'>{{.Info.SupportTelephone}}</Property> {{end}}
+      <Property Id='ARPSIZE'>{{.Info.Size}}</Property>
+        {{end}}
+      {{else}}
+      <!-- Need to customize the Add/remove program list entry, set the automatically created one to SystemComponent to hide it then create another one. -->
+      <Property Id="ARPSYSTEMCOMPONENT" Value="1"/>
       {{end}}
 
       {{range $i, $p := .Properties}}
@@ -101,6 +107,36 @@
             </RegistryKey>
         </Component>
         {{end}}
+        {{if ne .Version.MSI .Version.Display}}
+        <Component Id="RegistryEntriesARP" Guid="*">
+            <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\[ProductName]">
+                <RegistryValue Type="string" Name="AuthorizedCDFPrefix" Value="" KeyPath="yes"/>
+                <RegistryValue Type="string" Name="Comments" Value="{{.Info.Comments}}"/>
+                <RegistryValue Type="string" Name="Contact" Value="{{.Info.Contact}}"/>
+                {{if gt (.Icon | len) 0 }}
+                <RegistryValue Type="string" Name="DisplayIcon" Value="%SystemRoot%\Installer\[ProductCode]\Installer.Ico"/>
+                {{end}}
+                <RegistryValue Type="string" Name="DisplayName" Value="[ProductName]"/>
+                <RegistryValue Type="string" Name="DisplayVersion" Value="{{.Version.Display}}"/>
+                <RegistryValue Type="integer" Name="EstimatedSize" Value="{{.Info.Size}}"/>
+                <RegistryValue Type="string" Name="HelpLink" Value="{{.Info.HelpLink}}"/>
+                <RegistryValue Type="string" Name="HelpTelephone" Value="{{.Info.SupportTelephone}}"/>
+                <RegistryValue Type="string" Name="InstallDate" Value="[Date]"/>
+                <RegistryValue Type="string" Name="InstallLocation" Value="[INSTALLDIR]"/>
+                <RegistryValue Type="string" Name="InstallSource" Value="[SourceDir]"/>
+                <RegistryValue Type="integer" Name="Language" Value="[ProductLanguage]"/>
+                <RegistryValue Type="expandable" Name="ModifyPath" Value="MsiExec.exe /I[ProductCode]"/>
+                <RegistryValue Type="string" Name="Publisher" Value="{{.Company}}"/>
+                <RegistryValue Type="string" Name="Readme" Value="{{.Info.Readme}}"/>
+                <RegistryValue Type="expandable" Name="UninstallString" Value="MsiExec.exe /I[ProductCode]"/>
+                <RegistryValue Type="string" Name="URLInfoAbout" Value="{{.Info.SupportLink}}"/>
+                <RegistryValue Type="string" Name="URLUpdateInfo" Value="{{.Info.UpdateInfoLink}}"/>
+                <RegistryValue Type="integer" Name="Version" Value="{{.Version.Hex}}"/>
+                <RegistryValue Type="integer" Name="VersionMajor" Value="{{.Version.Major}}"/>
+                <RegistryValue Type="integer" Name="VersionMinor" Value="{{.Version.Minor}}"/>
+            </RegistryKey>
+        </Component>
+        {{end}}
 
          {{if gt (.Shortcuts | len) 0}}
          <Directory Id="ProgramMenuFolder">
@@ -154,7 +190,10 @@
          <ComponentRef Id="ApplicationFiles{{$i}}"/>
          {{end}}
          {{range $i, $r := .Registries}}
-         <ComponentRef Id="RegistryEntries{{$i}}" />
+         <ComponentRef Id="RegistryEntries{{$i}}"/>
+         {{end}}
+         {{if ne .Version.MSI .Version.Display}}
+         <ComponentRef Id="RegistryEntriesARP"/>
          {{end}}
          {{if gt (.Shortcuts | len) 0}}
          {{range $i, $e := .Shortcuts}}
