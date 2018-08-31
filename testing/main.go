@@ -41,7 +41,7 @@ func main() {
 	msi := "hello.msi"
 	pkg := makeCmd("C:/go-msi/go-msi.exe", "make",
 		"--msi", msi,
-		"--version", "0.0.1",
+		"--version", "v12.34.5678",
 		"--arch", "amd64",
 		"--property", "SOME_VERSION=some version",
 		"--keep",
