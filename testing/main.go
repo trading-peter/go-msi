@@ -24,15 +24,14 @@ func main() {
 	confirm(rmFile("log-install.txt"), "install log removal")
 	confirm(rmFile("log-uninstall.txt"), "uninstall log removal")
 
+	mustNotBeInstalled()
+
 	gopath := os.Getenv("GOPATH")
 	wd := makeDir(filepath.Join(gopath, "src/github.com/mat007/go-msi/testing/hello"))
 	mustContains(wd, "hello.go")
 	mustChdir(wd)
 
-	mustEnvEq("$env:some", "")
-
-	mustMkdirAll("build/amd64")
-	helloBuild := makeCmd("go", "build", "-o", _p("build/amd64/hello.exe"), "hello.go")
+	helloBuild := makeCmd("go", "build", "-o", "build/amd64/hello.exe", "hello.go")
 	mustExec(helloBuild, "hello build failed %v")
 
 	setup := makeCmd("C:/go-msi/go-msi.exe", "set-guid")
@@ -51,8 +50,6 @@ func main() {
 	resultPackage := makeFile(msi)
 	mustExist(resultPackage, "Package file is missing %v")
 
-	mustNotHaveWindowsService("HelloSvc")
-
 	packageInstall := makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt", "MINIMUMBUILD=0")
 	mustFail(packageInstall.Exec(), "Package installation succeeded")
 	content := readLog("log-install.txt")
@@ -65,6 +62,41 @@ func main() {
 	readFile("log-install.txt")
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
+	mustBeInstalled()
+
+	packageInstallUninstall := makeCmd("msiexec", "/x", msi, "/q", "/log", "log-uninstall.txt")
+	mustExec(packageInstallUninstall, "hello package uninstall failed %v")
+	readFile("log-uninstall.txt")
+	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
+
+	helloChocoPkg := makeCmd("C:/go-msi/go-msi.exe", "choco",
+		"--input", msi,
+		"--version", "0.0.1",
+		"-c", `"C:\Program Files\changelog\changelog.exe" ghrelease --version 0.0.1`,
+		"--keep",
+	)
+	mustExec(helloChocoPkg, "hello choco package make failed %v")
+
+	helloNuPkg := makeFile("hello.0.0.1.nupkg")
+	mustExist(helloNuPkg, "Chocolatey nupkg file is missing %v")
+
+	mustNotBeInstalled()
+
+	helloChocoInstall := makeCmd("choco", "install", "hello.0.0.1.nupkg", "-y")
+	mustExec(helloChocoInstall, "hello choco package install failed %v")
+
+	mustBeInstalled()
+
+	helloChocoUninstall := makeCmd("choco", "uninstall", "hello", "-v", "-d", "-y", "--force")
+	mustExec(helloChocoUninstall, "hello choco package uninstall failed %v")
+	readFile(`C:\ProgramData\chocolatey\logs\chocolatey.log`)
+
+	mustNotBeInstalled()
+
+	fmt.Println("\nSuccess!")
+}
+
+func mustBeInstalled() {
 	// mustShowEnv("$env:path")
 	// mustEnvEq("$env:some", "value")
 
@@ -87,60 +119,15 @@ func main() {
 	// mustStopWindowsService(svcName, helloSvc)
 	mustSucceed(helloSvc.Close(), "Failed to close the service %v")
 	mgr.Disconnect()
+}
 
-	packageInstallUninstall := makeCmd("msiexec", "/x", msi, "/q", "/log", "log-uninstall.txt")
-	mustExec(packageInstallUninstall, "hello package uninstall failed %v")
-	readFile("log-uninstall.txt")
-	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
-
+func mustNotBeInstalled() {
 	mustNotHaveWindowsService("HelloSvc")
 
 	// mustShowEnv("$env:path")
-	// mustEnvEq("$env:some", "")
+	mustEnvEq("$env:some", "")
 
 	mustNoReg(`HKCU\Software\mh-cbon\hello`, "Version")
-
-	helloChocoPkg := makeCmd("C:/go-msi/go-msi.exe", "choco",
-		"--input", msi,
-		"--version", "0.0.1",
-		"-c", _qp("C:/Program Files/changelog/changelog.exe")+" ghrelease --version 0.0.1",
-		"--keep",
-	)
-	mustExec(helloChocoPkg, "hello choco package make failed %v")
-
-	helloNuPkg := makeFile("hello.0.0.1.nupkg")
-	mustExist(helloNuPkg, "Chocolatey nupkg file is missing %v")
-
-	mustNotHaveWindowsService("HelloSvc")
-
-	helloChocoInstall := makeCmd("choco", "install", "hello.0.0.1.nupkg", "-y")
-	mustExec(helloChocoInstall, "hello choco package install failed %v")
-
-	readDir("C:/Program Files/hello")
-	readDir("C:/Program Files/hello/assets")
-
-	mgr, helloSvc = mustHaveWindowsService(svcName)
-	mustHaveStartedWindowsService(svcName, helloSvc)
-	mustSucceed(helloSvc.Close(), "Failed to close the service %v")
-	mgr.Disconnect()
-
-	// mustShowEnv("$env:path")
-	// mustEnvEq("$env:some", "value")
-
-	// mustExecHello(helloExecPath, helloEpURL)
-	mustQueryHello(helloEpURL)
-	// mustStopWindowsService(svcName, helloSvc)
-
-	helloChocoUninstall := makeCmd("choco", "uninstall", "hello", "-v", "-d", "-y", "--force")
-	mustExec(helloChocoUninstall, "hello choco package uninstall failed %v")
-	readFile("C:\\ProgramData\\chocolatey\\logs\\chocolatey.log")
-
-	mustNotHaveWindowsService("HelloSvc")
-
-	// mustShowEnv("$env:path")
-	// mustEnvEq("$env:some", "")
-
-	fmt.Println("\nSuccess!")
 }
 
 func mustHaveWindowsService(n string) (*mgr.Mgr, *mgr.Service) {
@@ -210,18 +197,6 @@ func mustExecHello(p string, u string) {
 	mustQueryHello(u)
 	mustKill(packageInstallExec, "hello was not killed properly %v")
 	log.Printf("SUCCESS: Hello program exec %q and query %q succeed\n", p, u)
-}
-
-func _qp(s string) string {
-	return _q(_p(s))
-}
-
-func _q(s string) string {
-	return "\"" + s + "\""
-}
-
-func _p(s string) string {
-	return filepath.Clean(s)
 }
 
 func confirm(err error, message string) {
@@ -325,14 +300,6 @@ func mustContains(path fmt.Stringer, file string) {
 	f := fmt.Sprintf("File %q not found in %q", file, path)
 	mustSucceed(isTrue(ex, f))
 	log.Printf("mustContains ok %v %v", path, file)
-}
-func mustMkdirAll(path string, perm ...os.FileMode) {
-	if len(perm) == 0 {
-		perm = []os.FileMode{os.ModePerm}
-	}
-	path = filepath.Clean(path)
-	mustSucceed(os.MkdirAll(path, perm[0]), fmt.Sprintf("mkdirAll failed %q\n%%v", path))
-	log.Printf("mkdirAll ok %v %v", path, perm)
 }
 func mustLs(s fmt.Stringer) map[string]os.FileInfo {
 	ret := make(map[string]os.FileInfo)
