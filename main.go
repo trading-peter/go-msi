@@ -551,7 +551,7 @@ func generateTemplates(c *cli.Context) error {
 		return cli.NewExitError("Cannot proceed, manifest file is incomplete", 1)
 	}
 
-	wixFile.Version.SemVer = version
+	wixFile.Version.User = version
 	wixFile.Version.Display = display
 
 	if c.IsSet("license") {
@@ -770,7 +770,7 @@ func quickMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	wixFile.Version.SemVer = version
+	wixFile.Version.User = version
 	wixFile.Version.Display = display
 
 	if c.IsSet("license") {
@@ -905,7 +905,7 @@ func chocoMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	wixFile.Version.SemVer = version
+	wixFile.Version.User = version
 
 	if err := wixFile.Normalize(); err != nil {
 		return cli.NewExitError(err.Error(), 1)
@@ -976,7 +976,7 @@ func chocoMake(c *cli.Context) error {
 	}
 
 	SrcNupkg := fmt.Sprintf("%s\\%s.%s.nupkg", out, wixFile.Choco.ID, wixFile.Version.MSI)
-	DstNupkg := fmt.Sprintf("%s.%s.nupkg", wixFile.Choco.ID, wixFile.Version.SemVer)
+	DstNupkg := fmt.Sprintf("%s.%s.nupkg", wixFile.Choco.ID, wixFile.Version.User)
 
 	if err = util.CopyFile(DstNupkg, SrcNupkg); err != nil {
 		return cli.NewExitError(err.Error(), 1)

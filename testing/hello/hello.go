@@ -5,13 +5,20 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/kardianos/service"
 )
 
-var logger service.Logger
+var (
+	logger  service.Logger
+	version string
+)
 
 func main() {
+	if len(os.Args) > 1 {
+		version = os.Args[1]
+	}
 	svcConfig := &service.Config{
 		Name:        "HelloSvc",
 		DisplayName: "The Hello service",
@@ -25,7 +32,7 @@ func main() {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "hello, world\n")
+	io.WriteString(w, "["+version+"] hello, world\n")
 }
 
 func runAsService(svcConfig *service.Config, run func()) error {

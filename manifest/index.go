@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/Masterminds/semver"
@@ -42,7 +43,7 @@ type WixManifest struct {
 
 // Version stores version related data in various formats.
 type Version struct {
-	SemVer  string
+	User    string
 	Display string
 	MSI     string
 	Major   int64
@@ -316,24 +317,32 @@ func rewrite(out, path string) (string, error) {
 // It applies defaults values on the choco property to generate a nuget package.
 func (wixFile *WixManifest) Normalize() error {
 	if wixFile.Version.Display == "" {
-		wixFile.Version.Display = wixFile.Version.SemVer
+		wixFile.Version.Display = wixFile.Version.User
 	}
-	wixFile.Version.MSI = wixFile.Version.SemVer
 	// Wix version Field of Product element
 	// does not support semver strings
 	// it supports only something like x.x.x.x
 	// So, if the version has metadata/prerelease values,
 	// lets get ride of those and save the workable version
 	// into Version.MSI field
-	v, err := semver.NewVersion(wixFile.Version.SemVer)
-	if err != nil {
-		return fmt.Errorf("Failed to parse version '%v': %v", wixFile.Version.SemVer, err)
+	if build, err := strconv.ParseInt(wixFile.Version.User, 10, 64); err == nil {
+		wixFile.Version.Major = build >> 24
+		wixFile.Version.Minor = (build - wixFile.Version.Major<<24) >> 16
+		wixFile.Version.Build = build - wixFile.Version.Major<<24 - wixFile.Version.Minor<<16
+		wixFile.Version.Hex = build
+	} else if v, err := semver.NewVersion(wixFile.Version.User); err == nil {
+		if v.Major() > 255 || v.Minor() > 255 || v.Patch() > 65535 {
+			return fmt.Errorf("Failed to parse version '%v', fields must not exceed maximum values of 255.255.65535", wixFile.Version.User)
+		}
+		wixFile.Version.MSI = v.String()
+		wixFile.Version.Major = v.Major()
+		wixFile.Version.Minor = v.Minor()
+		wixFile.Version.Build = v.Patch()
+		wixFile.Version.Hex = v.Major()<<24 + v.Minor()<<16 + v.Patch()
+	} else {
+		return fmt.Errorf("Failed to parse version '%v', must be either a semantic version or a single build/revision number", wixFile.Version.User)
 	}
-	wixFile.Version.MSI = v.String()
-	wixFile.Version.Major = v.Major()
-	wixFile.Version.Minor = v.Minor()
-	wixFile.Version.Build = v.Patch()
-	wixFile.Version.Hex = v.Major()>>6 + v.Minor()>>4 + v.Patch()
+	wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d", wixFile.Version.Major, wixFile.Version.Minor, wixFile.Version.Build)
 
 	if wixFile.Banner != "" {
 		path, err := filepath.Abs(wixFile.Banner)
@@ -399,6 +408,7 @@ func (wixFile *WixManifest) Normalize() error {
 		}
 	}
 
+	var err error
 	// Split registry path into root and key
 	for _, prop := range wixFile.Properties {
 		reg := prop.Registry

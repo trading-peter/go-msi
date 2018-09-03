@@ -24,34 +24,30 @@ func main() {
 	confirm(rmFile("log-install.txt"), "install log removal")
 	confirm(rmFile("log-uninstall.txt"), "uninstall log removal")
 
+	mustNotBeInstalled()
+
 	gopath := os.Getenv("GOPATH")
 	wd := makeDir(filepath.Join(gopath, "src/github.com/mat007/go-msi/testing/hello"))
 	mustContains(wd, "hello.go")
 	mustChdir(wd)
 
-	mustEnvEq("$env:some", "")
-
-	mustMkdirAll("build/amd64")
-	helloBuild := makeCmd("go", "build", "-o", _p("build/amd64/hello.exe"), "hello.go")
+	helloBuild := makeCmd("go", "build", "-o", "build/amd64/hello.exe", "hello.go")
 	mustExec(helloBuild, "hello build failed %v")
 
 	setup := makeCmd("C:/go-msi/go-msi.exe", "set-guid")
 	mustExec(setup, "Packaging setup failed %v")
 
 	msi := "hello.msi"
+	version := "v12.34.5678"
 	pkg := makeCmd("C:/go-msi/go-msi.exe", "make",
 		"--msi", msi,
-		"--version", "v12.34.5678",
+		"--version", version,
 		"--arch", "amd64",
 		"--property", "SOME_VERSION=some version",
 		"--keep",
 	)
 	mustExec(pkg, "Packaging failed %v")
-
-	resultPackage := makeFile(msi)
-	mustExist(resultPackage, "Package file is missing %v")
-
-	mustNotHaveWindowsService("HelloSvc")
+	mustExist(msi, "Package file is missing %v")
 
 	packageInstall := makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt", "MINIMUMBUILD=0")
 	mustFail(packageInstall.Exec(), "Package installation succeeded")
@@ -62,85 +58,149 @@ func main() {
 
 	packageInstall = makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt")
 	mustExec(packageInstall, "Package installation failed %v")
-	readFile("log-install.txt")
+	content = readLog("log-install.txt")
+	mustContain(content, "Product: hello -- Installation completed successfully.")
+	mustContain(content, "Windows Installer installed the product. Product Name: hello. Product Version: 12.34.5678. Product Language: 1033. Manufacturer: mh-cbon.")
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
+	mustBeInstalled(version)
+
+	// Re-installing the same package in quiet mode re-configures it… to the same state.
+	packageReinstall := makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt")
+	mustExec(packageReinstall, "Package re-installation failed %v")
+	content = readLog("log-install.txt")
+	mustContain(content, "Product: hello -- Configuration completed successfully.")
+	mustContain(content, "Windows Installer reconfigured the product. Product Name: hello. Product Version: 12.34.5678. Product Language: 1033. Manufacturer: mh-cbon.")
+	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
+
+	mustBeInstalled(version)
+
+	msi2 := "hello-2.msi"
+	pkg = makeCmd("C:/go-msi/go-msi.exe", "make",
+		"--msi", msi2,
+		"--version", "v12.34.5677", // version down
+		"--arch", "amd64",
+		"--property", "SOME_VERSION=some version",
+		"--keep",
+	)
+	mustExec(pkg, "Packaging failed %v")
+	mustExist(msi2, "Package file is missing %v")
+	packageDowngrade := makeCmd("msiexec", "/i", msi2, "/q", "/log", "log-install.txt")
+	mustFail(packageDowngrade.Exec(), "Package downgrade succeeded")
+	content = readLog("log-install.txt")
+	mustContain(content, "Product: hello -- A newer version of this software is already installed.")
+	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
+
+	mustBeInstalled(version)
+
+	version = "v12.34.5679" // version up
+	pkg = makeCmd("C:/go-msi/go-msi.exe", "make",
+		"--msi", msi2,
+		"--version", version,
+		"--arch", "amd64",
+		"--property", "SOME_VERSION=some version",
+		"--keep",
+	)
+	mustExec(pkg, "Packaging failed %v")
+	mustExist(msi2, "Package file is missing %v")
+	packageUpgrade := makeCmd("msiexec", "/i", msi2, "/q", "/log", "log-install.txt")
+	mustExec(packageUpgrade, "Package upgrade failed %v")
+	content = readLog("log-install.txt")
+	mustContain(content, "Product: hello -- Installation completed successfully.")
+	mustContain(content, "Windows Installer installed the product. Product Name: hello. Product Version: 12.34.5679. Product Language: 1033. Manufacturer: mh-cbon.")
+	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
+
+	mustBeInstalled(version)
+
+	packageUninstall := makeCmd("msiexec", "/x", msi, "/q", "/log", "log-uninstall.txt")
+	mustFail(packageUninstall.Exec(), "Old package uninstall succeeded")
+	content = readLog("log-uninstall.txt")
+	mustContain(content, "This action is only valid for products that are currently installed")
+	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
+
+	mustBeInstalled(version)
+
+	packageUninstall = makeCmd("msiexec", "/x", msi2, "/q", "/log", "log-uninstall.txt")
+	mustExec(packageUninstall, "Package uninstall failed %v")
+	content = readLog("log-uninstall.txt")
+	mustContain(content, "Product: hello -- Removal completed successfully.")
+	mustContain(content, "Windows Installer removed the product. Product Name: hello. Product Version: 12.34.5679. Product Language: 1033. Manufacturer: mh-cbon.")
+	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
+
+	mustNotBeInstalled()
+
+	version = "0.0.1"
+	msi = "hello-choco.msi"
+	pkg = makeCmd("C:/go-msi/go-msi.exe", "make",
+		"--msi", msi,
+		"--version", version,
+		"--arch", "amd64",
+		"--property", "SOME_VERSION=some version",
+		"--keep",
+	)
+	mustExec(pkg, "Packaging failed %v")
+	mustExist(msi, "Package file is missing %v")
+	chocoPkg := makeCmd("C:/go-msi/go-msi.exe", "choco",
+		"--input", msi,
+		"--version", version,
+		"-c", `"C:\Program Files\changelog\changelog.exe" ghrelease --version `+version,
+		"--keep",
+	)
+	mustExec(chocoPkg, "hello choco package make failed %v")
+	mustExist("hello."+version+".nupkg", "Chocolatey nupkg file is missing %v")
+
+	chocoInstall := makeCmd("choco", "install", "hello."+version+".nupkg", "-y")
+	mustExec(chocoInstall, "hello choco package install failed %v")
+
+	mustBeInstalled("v" + version)
+
+	chocoUninstall := makeCmd("choco", "uninstall", "hello", "-v", "-d", "-y", "--force")
+	mustExec(chocoUninstall, "hello choco package uninstall failed %v")
+	readFile(`C:\ProgramData\chocolatey\logs\chocolatey.log`)
+
+	mustNotBeInstalled()
+
+	fmt.Println("\nSuccess!")
+}
+
+const (
+	url     = "http://localhost:8080/"
+	service = "HelloSvc"
+)
+
+func mustBeInstalled(version string) {
 	// mustShowEnv("$env:path")
 	// mustEnvEq("$env:some", "value")
 
-	mustShowReg(`HKCU\Software\mh-cbon\hello`, "Version")
+	// mustShowReg(`HKCU\Software\mh-cbon\hello`, "Version")
 	mustRegEq(`HKCU\Software\mh-cbon\hello`, "Version", "some version")
-	mustShowReg(`HKCU\Software\mh-cbon\hello`, "InstallDir")
+	// mustShowReg(`HKCU\Software\mh-cbon\hello`, "InstallDir")
 	mustRegEq(`HKCU\Software\mh-cbon\hello`, "InstallDir", `C:\Program Files\hello`)
 
 	readDir("C:/Program Files/hello")
 	readDir("C:/Program Files/hello/assets")
 
-	svcName := "HelloSvc"
-	mgr, helloSvc := mustHaveWindowsService(svcName)
-	mustHaveStartedWindowsService(svcName, helloSvc)
+	mgr, svc := mustHaveWindowsService(service)
+	defer mgr.Disconnect()
+	mustHaveStartedWindowsService(service, svc)
 
-	helloEpURL := "http://localhost:8080/"
 	// helloExecPath := "C:/Program Files/hello/hello.exe"
-	// mustExecHello(helloExecPath, helloEpURL)
-	mustQueryHello(helloEpURL)
-	// mustStopWindowsService(svcName, helloSvc)
-	mustSucceed(helloSvc.Close(), "Failed to close the service %v")
-	mgr.Disconnect()
+	// mustExecHello(helloExecPath, url)
+	mustQueryHello(url, version)
+	// mustStopWindowsService(svcName, svc)
+	mustSucceed(svc.Close(), "Failed to close the service %v")
+}
 
-	packageInstallUninstall := makeCmd("msiexec", "/x", msi, "/q", "/log", "log-uninstall.txt")
-	mustExec(packageInstallUninstall, "hello package uninstall failed %v")
-	readFile("log-uninstall.txt")
-	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
+func mustNotBeInstalled() {
+	mustNotHaveWindowsService(service)
+	mustNotQueryHello(url)
 
-	mustNotHaveWindowsService("HelloSvc")
+	mustNoDir("C:/Program Files/hello")
 
 	// mustShowEnv("$env:path")
-	// mustEnvEq("$env:some", "")
+	mustEnvEq("$env:some", "")
 
 	mustNoReg(`HKCU\Software\mh-cbon\hello`, "Version")
-
-	helloChocoPkg := makeCmd("C:/go-msi/go-msi.exe", "choco",
-		"--input", msi,
-		"--version", "0.0.1",
-		"-c", _qp("C:/Program Files/changelog/changelog.exe")+" ghrelease --version 0.0.1",
-		"--keep",
-	)
-	mustExec(helloChocoPkg, "hello choco package make failed %v")
-
-	helloNuPkg := makeFile("hello.0.0.1.nupkg")
-	mustExist(helloNuPkg, "Chocolatey nupkg file is missing %v")
-
-	mustNotHaveWindowsService("HelloSvc")
-
-	helloChocoInstall := makeCmd("choco", "install", "hello.0.0.1.nupkg", "-y")
-	mustExec(helloChocoInstall, "hello choco package install failed %v")
-
-	readDir("C:/Program Files/hello")
-	readDir("C:/Program Files/hello/assets")
-
-	mgr, helloSvc = mustHaveWindowsService(svcName)
-	mustHaveStartedWindowsService(svcName, helloSvc)
-	mustSucceed(helloSvc.Close(), "Failed to close the service %v")
-	mgr.Disconnect()
-
-	// mustShowEnv("$env:path")
-	// mustEnvEq("$env:some", "value")
-
-	// mustExecHello(helloExecPath, helloEpURL)
-	mustQueryHello(helloEpURL)
-	// mustStopWindowsService(svcName, helloSvc)
-
-	helloChocoUninstall := makeCmd("choco", "uninstall", "hello", "-v", "-d", "-y", "--force")
-	mustExec(helloChocoUninstall, "hello choco package uninstall failed %v")
-	readFile("C:\\ProgramData\\chocolatey\\logs\\chocolatey.log")
-
-	mustNotHaveWindowsService("HelloSvc")
-
-	// mustShowEnv("$env:path")
-	// mustEnvEq("$env:some", "")
-
-	fmt.Println("\nSuccess!")
 }
 
 func mustHaveWindowsService(n string) (*mgr.Mgr, *mgr.Service) {
@@ -155,19 +215,18 @@ func mustHaveWindowsService(n string) (*mgr.Mgr, *mgr.Service) {
 	return mgr, s
 }
 
-func mustNotHaveWindowsService(n string) bool {
+func mustNotHaveWindowsService(n string) {
 	mgr, err := mgr.Connect()
 	mustSucceed(err, "Failed to connect to the service manager %v")
 	defer mgr.Disconnect()
 	s, err := mgr.OpenService(n)
-	mustNotSucceed(err, "Must fail to open the service %v")
+	mustFail(err, "Must fail to open the service")
 	if s == nil {
-		mustNotSucceed(err, "Must fail to find the service %v")
+		mustFail(err, "Must fail to find the service")
 	} else {
 		defer s.Close()
 	}
 	log.Printf("SUCCESS: Service %q does not exist\n", n)
-	return s == nil
 }
 
 func mustHaveStartedWindowsService(n string, s *mgr.Service) {
@@ -188,40 +247,15 @@ func mustStopWindowsService(n string, s *mgr.Service) {
 	log.Printf("SUCCESS: Service %q was stopped\n", n)
 }
 
-func mustNotSucceed(err error, format ...string) {
-	if err == nil {
-		if len(format) > 0 {
-			err = fmt.Errorf(format[0], err)
-		}
-		log.Fatal(err)
-	}
-}
-
-func mustQueryHello(u string) {
+func mustQueryHello(u, v string) {
 	res := getURL(u)
 	mustExec(res, "HTTP request failed %v")
-	mustEqStdout(res, "hello, world\n", "Invalid HTTP response got=%q, want=%q")
+	mustEqStdout(res, "["+v+"] hello, world\n", "Invalid HTTP response got=%q, want=%q")
 	log.Printf("SUCCESS: Hello service query %q succeed\n", u)
 }
-
-func mustExecHello(p string, u string) {
-	packageInstallExec := makeCmd(p)
-	mustStart(packageInstallExec, "hello command failed %v")
-	mustQueryHello(u)
-	mustKill(packageInstallExec, "hello was not killed properly %v")
-	log.Printf("SUCCESS: Hello program exec %q and query %q succeed\n", p, u)
-}
-
-func _qp(s string) string {
-	return _q(_p(s))
-}
-
-func _q(s string) string {
-	return "\"" + s + "\""
-}
-
-func _p(s string) string {
-	return filepath.Clean(s)
+func mustNotQueryHello(u string) {
+	res := getURL(u)
+	mustFail(res.Exec(), "HTTP request succeeded")
 }
 
 func confirm(err error, message string) {
@@ -253,8 +287,6 @@ func mustSucceedDetailed(err error, e interface{}, format ...string) {
 			err = fmt.Errorf("%v", err)
 		}
 		log.Fatal(err)
-	} else {
-
 	}
 }
 func mustFail(err error, format ...string) {
@@ -266,6 +298,7 @@ func mustFail(err error, format ...string) {
 		log.Fatal(msg)
 	}
 }
+
 func mustContain(s, substr string) {
 	if strings.Index(s, substr) == -1 {
 		log.Println(s)
@@ -288,15 +321,8 @@ func maybeShowEnv(e string) *cmdExec {
 	log.Printf("showEnv ok %v %q", e, psShowEnv.Stdout())
 	return psShowEnv
 }
-func mustLookPath(search string) string {
-	path, err := exec.LookPath(search)
-	mustSucceed(err, fmt.Sprintf("lookPath failed %q\n%%v", search))
-	path = filepath.Clean(path)
-	log.Printf("lookPath ok %v=%q", search, path)
-	return path
-}
 func mustChdir(s fmt.Stringer) {
-	path := filepath.Clean(s.String())
+	path := s.String()
 	mustSucceed(os.Chdir(path), fmt.Sprintf("chDir failed %q\n%%v", path))
 	log.Printf("chdir ok %v", path)
 }
@@ -326,17 +352,9 @@ func mustContains(path fmt.Stringer, file string) {
 	mustSucceed(isTrue(ex, f))
 	log.Printf("mustContains ok %v %v", path, file)
 }
-func mustMkdirAll(path string, perm ...os.FileMode) {
-	if len(perm) == 0 {
-		perm = []os.FileMode{os.ModePerm}
-	}
-	path = filepath.Clean(path)
-	mustSucceed(os.MkdirAll(path, perm[0]), fmt.Sprintf("mkdirAll failed %q\n%%v", path))
-	log.Printf("mkdirAll ok %v %v", path, perm)
-}
 func mustLs(s fmt.Stringer) map[string]os.FileInfo {
 	ret := make(map[string]os.FileInfo)
-	path := filepath.Clean(s.String())
+	path := s.String()
 	files, err := ioutil.ReadDir(path)
 	mustSucceed(err, fmt.Sprintf("readdir failed %q, err=%%v", s))
 	for _, f := range files {
@@ -351,7 +369,7 @@ type starter interface {
 
 func mustStart(e starter, format ...string) {
 	if len(format) < 1 {
-		format[0] = "Start err: %v"
+		format = []string{"Start err: %v"}
 	}
 	mustSucceed(e.Start(), format[0])
 }
@@ -362,7 +380,7 @@ type waiter interface {
 
 func mustWait(e waiter, format ...string) {
 	if len(format) < 1 {
-		format[0] = "Wait err: %v"
+		format = []string{"Wait err: %v"}
 	}
 	mustSucceed(e.Wait(), format[0])
 }
@@ -373,7 +391,7 @@ type execer interface {
 
 func mustExec(e execer, format ...string) {
 	if len(format) < 1 {
-		format[0] = "Exec err: %v"
+		format = []string{"Exec err: %v"}
 	}
 	mustSucceedDetailed(e.Exec(), e, format[0])
 	log.Printf("mustExec success %v", e)
@@ -382,7 +400,7 @@ func mustExec(e execer, format ...string) {
 func warnExec(e execer, format ...string) {
 	if err := e.Exec(); err != nil {
 		if len(format) < 1 {
-			format[0] = "Exec err: %v"
+			format = []string{"Exec err: %v"}
 		}
 		log.Printf(format[0], err)
 	}
@@ -394,7 +412,7 @@ type killer interface {
 
 func mustKill(e killer, format ...string) {
 	if len(format) < 1 {
-		format[0] = "Kill err: %v"
+		format = []string{"Kill err: %v"}
 	}
 	mustSucceed(e.Kill(), format[0])
 }
@@ -403,21 +421,22 @@ type exister interface {
 	exists() bool
 }
 
-func mustExist(e exister, format ...string) {
+func mustExist(file string, format ...string) {
+	e := makeFile(file)
 	if len(format) < 1 {
-		format[0] = fmt.Sprintf("mustExist err: %T does not exist %q, got %%v", e, e)
+		format = []string{fmt.Sprintf("mustExist err: %T does not exist %q, got %%v", e, e)}
 	}
 	mustSucceed(isTrue(e.exists(), format[0]))
 }
 
 func isTrue(b bool, format ...string) error {
-	if b == false {
-		if len(format) < 1 {
-			format[0] = "mustTrue got %v"
-		}
-		return fmt.Errorf(format[0], b)
+	if b {
+		return nil
 	}
-	return nil
+	if len(format) < 1 {
+		format = []string{"isTrue got %v"}
+	}
+	return fmt.Errorf(format[0], b)
 }
 
 type stderrer interface {
@@ -431,9 +450,9 @@ type stdouter interface {
 func mustEqStdout(e stdouter, expected string, format ...string) {
 	got := e.Stdout()
 	if len(format) < 1 {
-		format[0] = fmt.Sprintf("mustEqStdout failed: output does not match, got=%q, want=%q", got, expected)
+		format = []string{"mustEqStdout failed: output does not match, got=%q, want=%q: "}
 	}
-	mustSucceed(isTrue(got == expected), format[0])
+	mustSucceed(isTrue(got == expected), fmt.Sprintf(format[0], got, expected))
 }
 
 func makeFile(f string) *file {
@@ -478,7 +497,6 @@ func getURL(url string) *httpRequest {
 
 type httpRequest struct {
 	url        string
-	err        error
 	body       string
 	statusCode int
 	headers    map[string][]string
@@ -502,18 +520,18 @@ func (f *httpRequest) ExitOk() bool {
 }
 func (f *httpRequest) Exec() error {
 	response, err := http.Get(f.url)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
 	f.headers = response.Header
 	f.statusCode = response.StatusCode
-	f.err = err
-	if f.err == nil {
-		var b bytes.Buffer
-		defer response.Body.Close()
-		_, f.err = io.Copy(&b, response.Body)
-		if f.err == nil {
-			f.body = b.String()
-		}
+	b, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return err
 	}
-	return f.err
+	f.body = string(b)
+	return nil
 }
 
 type cmdExec struct {
@@ -587,7 +605,7 @@ func (e *cmdExec) ExitOk() bool {
 
 func makeCmd(w string, a ...string) *cmdExec {
 	log.Printf("makeCmd: %v %v\n", w, a)
-	cmd := exec.Command(mustLookPath(w), a...)
+	cmd := exec.Command(w, a...)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -596,7 +614,6 @@ func makeCmd(w string, a ...string) *cmdExec {
 }
 
 func readDir(s string) {
-	s = filepath.Clean(s)
 	files, err := ioutil.ReadDir(s)
 	mustSucceed(err, fmt.Sprintf("readdir failed %q, err=%%v", s))
 	log.Printf("Content of directory %q\n", s)
@@ -605,8 +622,12 @@ func readDir(s string) {
 	}
 }
 
+func mustNoDir(s string) {
+	_, err := os.Stat(s)
+	mustFail(err, fmt.Sprintf("directory %q exists", s))
+}
+
 func readFile(s string) {
-	s = filepath.Clean(s)
 	fd, err := os.Open(s)
 	mustSucceed(err, fmt.Sprintf("readfile failed %q, err=%%v", s))
 	defer fd.Close()
@@ -616,7 +637,6 @@ func readFile(s string) {
 }
 
 func rmFile(s string) error {
-	s = filepath.Clean(s)
 	return os.Remove(s)
 }
 
