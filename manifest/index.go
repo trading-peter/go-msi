@@ -46,9 +46,6 @@ type Version struct {
 	User    string
 	Display string
 	MSI     string
-	Major   int64
-	Minor   int64
-	Build   int64
 	Hex     int64
 }
 
@@ -325,24 +322,21 @@ func (wixFile *WixManifest) Normalize() error {
 	// So, if the version has metadata/prerelease values,
 	// lets get ride of those and save the workable version
 	// into Version.MSI field
-	if build, err := strconv.ParseInt(wixFile.Version.User, 10, 64); err == nil {
-		wixFile.Version.Major = build >> 24
-		wixFile.Version.Minor = (build - wixFile.Version.Major<<24) >> 16
-		wixFile.Version.Build = build - wixFile.Version.Major<<24 - wixFile.Version.Minor<<16
-		wixFile.Version.Hex = build
+	if n, err := strconv.ParseInt(wixFile.Version.User, 10, 64); err == nil {
+		major := n >> 24
+		minor := (n - major<<24) >> 16
+		build := n - major<<24 - minor<<16
+		wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d", major, minor, build)
+		wixFile.Version.Hex = n
 	} else if v, err := semver.NewVersion(wixFile.Version.User); err == nil {
 		if v.Major() > 255 || v.Minor() > 255 || v.Patch() > 65535 {
 			return fmt.Errorf("Failed to parse version '%v', fields must not exceed maximum values of 255.255.65535", wixFile.Version.User)
 		}
 		wixFile.Version.MSI = v.String()
-		wixFile.Version.Major = v.Major()
-		wixFile.Version.Minor = v.Minor()
-		wixFile.Version.Build = v.Patch()
 		wixFile.Version.Hex = v.Major()<<24 + v.Minor()<<16 + v.Patch()
 	} else {
 		return fmt.Errorf("Failed to parse version '%v', must be either a semantic version or a single build/revision number", wixFile.Version.User)
 	}
-	wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d", wixFile.Version.Major, wixFile.Version.Minor, wixFile.Version.Build)
 
 	if wixFile.Banner != "" {
 		path, err := filepath.Abs(wixFile.Banner)

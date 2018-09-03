@@ -119,8 +119,6 @@
                 <RegistryValue Type="string" Name="URLInfoAbout" Value="{{.Info.SupportLink}}"/>
                 <RegistryValue Type="string" Name="URLUpdateInfo" Value="{{.Info.UpdateInfoLink}}"/>
                 <RegistryValue Type="integer" Name="Version" Value="{{.Version.Hex}}"/>
-                <RegistryValue Type="integer" Name="VersionMajor" Value="{{.Version.Major}}"/>
-                <RegistryValue Type="integer" Name="VersionMinor" Value="{{.Version.Minor}}"/>
             </RegistryKey>
         </Component>
 
