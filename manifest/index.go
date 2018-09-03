@@ -329,6 +329,9 @@ func (wixFile *WixManifest) Normalize() error {
 	if err != nil {
 		return fmt.Errorf("Failed to parse version '%v': %v", wixFile.Version.SemVer, err)
 	}
+	if v.Major() > 255 || v.Minor() > 255 || v.Patch() > 65535 {
+		return fmt.Errorf("The version fields have maximum values of 255.255.65535: %v", wixFile.Version.SemVer)
+	}
 	wixFile.Version.MSI = v.String()
 	wixFile.Version.Major = v.Major()
 	wixFile.Version.Minor = v.Minor()
