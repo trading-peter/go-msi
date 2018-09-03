@@ -21,12 +21,7 @@
 
       <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
 
-      <Upgrade Id="{{.UpgradeCode}}">
-         <UpgradeVersion Minimum="{{.Version.MSI}}" OnlyDetect="yes" Property="NEWERVERSIONDETECTED"/>
-         <UpgradeVersion Minimum="0.0.0" Maximum="{{.Version.MSI}}" IncludeMinimum="yes" IncludeMaximum="no"
-                         Property="OLDERVERSIONBEINGUPGRADED"/>
-      </Upgrade>
-      <Condition Message="A newer version of this software is already installed.">NOT NEWERVERSIONDETECTED</Condition>
+      <MajorUpgrade DowngradeErrorMessage="A newer version of this software is already installed."/>
 
       {{if gt (.Banner | len) 0 }} <WixVariable Id="WixUIBannerBmp" Value="{{.Banner}}"/> {{end}}
       {{if gt (.Dialog | len) 0 }} <WixVariable Id="WixUIDialogBmp" Value="{{.Dialog}}"/> {{end}}
@@ -153,7 +148,6 @@
       <CustomAction Id="CustomUninstallExec{{$i}}" BinaryKey="WixCA" DllEntry="WixQuietExec" Execute="deferred" {{if gt ($e.Return | len) 0}} Return="{{$e.Return}}" {{end}} Impersonate="no"/>
       {{end}}
       <InstallExecuteSequence>
-         <RemoveExistingProducts After="InstallValidate"/>
          {{range $i, $e := .InstallHooks}}
          <Custom Action="CustomInstallExec{{$i}}" After="{{if eq $i 0}}InstallFiles{{else}}CustomInstallExec{{dec $i}}{{end}}">NOT Installed AND NOT REMOVE</Custom>
          {{end}}
