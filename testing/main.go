@@ -172,23 +172,22 @@ func mustBeInstalled(version string) {
 	// mustShowEnv("$env:path")
 	// mustEnvEq("$env:some", "value")
 
-	// mustShowReg(`HKCU\Software\mh-cbon\hello`, "Version")
 	mustRegEq(`HKCU\Software\mh-cbon\hello`, "Version", "some version")
-	// mustShowReg(`HKCU\Software\mh-cbon\hello`, "InstallDir")
 	mustRegEq(`HKCU\Software\mh-cbon\hello`, "InstallDir", `C:\Program Files\hello`)
 
 	readDir("C:/Program Files/hello")
 	readDir("C:/Program Files/hello/assets")
+	readDir("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello")
 
 	mgr, svc := mustHaveWindowsService(service)
 	defer mgr.Disconnect()
 	mustHaveStartedWindowsService(service, svc)
+	mustSucceed(svc.Close(), "Failed to close the service %v")
 
 	// helloExecPath := "C:/Program Files/hello/hello.exe"
 	// mustExecHello(helloExecPath, url)
 	mustQueryHello(url, version)
 	// mustStopWindowsService(svcName, svc)
-	mustSucceed(svc.Close(), "Failed to close the service %v")
 }
 
 func mustNotBeInstalled() {
@@ -196,11 +195,15 @@ func mustNotBeInstalled() {
 	mustNotQueryHello(url)
 
 	mustNoDir("C:/Program Files/hello")
+	mustNoDir("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello")
 
 	// mustShowEnv("$env:path")
 	mustEnvEq("$env:some", "")
 
-	mustNoReg(`HKCU\Software\mh-cbon\hello`, "Version")
+	mustNoReg(`HKCU\Software\mh-cbon`)
+	mustNoReg(`HKLM\Software\mh-cbon`)
+	mustNoReg(`HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\hello`)
+	mustNoReg(`HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\hello`)
 }
 
 func mustHaveWindowsService(n string) (*mgr.Mgr, *mgr.Service) {
@@ -341,8 +344,8 @@ func mustRegEq(key, value, expected string) {
 	mustExec(cmd, "registry query command failed %v")
 	mustContain(cmd.Stdout(), expected)
 }
-func mustNoReg(key, value string) {
-	cmd := makeCmd("reg", "query", key, "/v", value)
+func mustNoReg(key string) {
+	cmd := makeCmd("reg", "query", key)
 	mustFail(cmd.Exec(), "registry query command succeeded %v, \n%v", cmd.Stdout())
 }
 func mustContains(path fmt.Stringer, file string) {
