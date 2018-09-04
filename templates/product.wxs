@@ -179,8 +179,9 @@
       </Feature>
 
       <UI>
+         <UIRef Id="WixUI_ErrorProgressText"/>
          <!-- Define the installer UI -->
-         <UIRef Id="WixUI_HK" />
+         <UIRef Id="WixUI_HK"/>
       </UI>
 
       <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
