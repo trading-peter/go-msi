@@ -21,7 +21,7 @@
         "start": "auto",
         "display-name": "Hello!",
         "description": "The hello service",
-        "arguments": "v[ProductVersion]"
+        "arguments": "[ProductVersion]"
       }
     }
   ],
@@ -62,7 +62,8 @@
       "description": "hello web server",
       "target": "[INSTALLDIR]hello.exe",
       "wdir": "INSTALLDIR",
-      "icon": "ico.ico"
+      "icon": "ico.ico",
+      "condition": "STARTMENUSHORTCUT ~= \"yes\""
     }
   ],
   "choco": {
@@ -89,6 +90,10 @@
     {
       "id": "MINIMUMBUILD",
       "value": "99999"
+    },
+    {
+      "id": "STARTMENUSHORTCUT",
+      "value": "yes"
     }
   ],
   "conditions": [

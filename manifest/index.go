@@ -163,13 +163,15 @@ type Shortcut struct {
 	Target      string `json:"target"`
 	WDir        string `json:"wdir,omitempty"`
 	Arguments   string `json:"arguments,omitempty"`
-	Icon        string `json:"icon,omitempty"` // a path to the ico file, no space in it.
+	Icon        string `json:"icon,omitempty"`
+	Condition   string `json:"condition,omitempty"`
 }
 
 // RegistryItem is the struct to decode a registry item.
 type RegistryItem struct {
 	Registry
-	Values []RegistryValue `json:"values,omitempty"`
+	Values    []RegistryValue `json:"values,omitempty"`
+	Condition string          `json:"condition,omitempty"`
 }
 
 // RegistryValue is the struct to decode a registry value.

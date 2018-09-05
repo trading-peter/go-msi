@@ -34,7 +34,7 @@
       <Property Id="ARPSYSTEMCOMPONENT" Value="1"/>
 
       {{range $i, $p := .Properties}}
-      <Property Id="{{$p.ID}}" {{if $p.Value}}Value="{{$p.Value}}"{{else if not $p.Registry}}Secure="yes"{{end}}>
+      <Property Id="{{$p.ID}}" {{if $p.Value}}Value="{{$p.Value}}"{{end}} {{if not $p.Registry}}Secure="yes"{{end}}>
          {{if $p.Registry}}
          <RegistrySearch Id="{{$p.ID}}Search" Root="{{$p.Registry.Root}}" Key="{{$p.Registry.Key}}"
             {{if gt ($p.Registry.Name | len) 0}} Name="{{$p.Registry.Name}}" {{end}} Type="raw"/>
@@ -88,17 +88,18 @@
                 <RegistryValue Type="{{$v.Type}}" {{if gt ($v.Name | len) 0}} Name="{{$v.Name}}" {{end}} Value="{{$v.Value}}" {{if eq $i 0}}{{if eq $j 0}} KeyPath="yes" {{end}}{{end}}/>
                 {{end}}
             </RegistryKey>
+            {{if gt ($r.Condition | len) 0}}<Condition><![CDATA[{{$r.Condition}}]]></Condition>{{end}}
         </Component>
         {{end}}
         <Component Id="RegistryEntriesARP" Guid="*">
             <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\[ProductName]">
-                <RegistryValue Type="string" Name="AuthorizedCDFPrefix" Value="" KeyPath="yes"/>
+                <RegistryValue Type="string" Name="AuthorizedCDFPrefix" Value=""/>
                 <RegistryValue Type="string" Name="Comments" Value="{{.Info.Comments}}"/>
                 <RegistryValue Type="string" Name="Contact" Value="{{.Info.Contact}}"/>
                 {{if gt (.Icon | len) 0 }}
                 <RegistryValue Type="string" Name="DisplayIcon" Value="%SystemRoot%\Installer\[ProductCode]\Installer.Ico"/>
                 {{end}}
-                <RegistryValue Type="string" Name="DisplayName" Value="[ProductName]"/>
+                <RegistryValue Type="string" Name="DisplayName" Value="[ProductName]" KeyPath="yes"/>
                 <RegistryValue Type="string" Name="DisplayVersion" Value="{{.Version.Display}}"/>
                 <RegistryValue Type="integer" Name="EstimatedSize" Value="{{.Info.Size}}"/>
                 <RegistryValue Type="string" Name="HelpLink" Value="{{.Info.HelpLink}}"/>
@@ -126,6 +127,7 @@
                         {{if gt ($e.Arguments | len) 0}}Arguments="{{$e.Arguments}}"{{end}}>
                         {{if gt ($e.Icon | len) 0}}<Icon Id="Icon{{$i}}" SourceFile="{{$e.Icon}}"/>{{end}}
                     </Shortcut>
+                    {{if gt ($e.Condition | len) 0}}<Condition><![CDATA[{{$e.Condition}}]]></Condition>{{end}}
                     <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
                     <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
                 </Component>
