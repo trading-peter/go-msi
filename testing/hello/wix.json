@@ -62,7 +62,6 @@
       "description": "hello web server",
       "target": "[INSTALLDIR]hello.exe",
       "wdir": "INSTALLDIR",
-      "arguments": "",
       "icon": "ico.ico"
     }
   ],

@@ -161,9 +161,9 @@ type Shortcut struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Target      string `json:"target"`
-	WDir        string `json:"wdir"`
-	Arguments   string `json:"arguments"`
-	Icon        string `json:"icon"` // a path to the ico file, no space in it.
+	WDir        string `json:"wdir,omitempty"`
+	Arguments   string `json:"arguments,omitempty"`
+	Icon        string `json:"icon,omitempty"` // a path to the ico file, no space in it.
 }
 
 // RegistryItem is the struct to decode a registry item.

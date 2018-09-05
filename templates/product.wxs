@@ -117,25 +117,22 @@
             </RegistryKey>
         </Component>
 
-         {{if gt (.Shortcuts | len) 0}}
-         <Directory Id="ProgramMenuFolder">
+        {{if gt (.Shortcuts | len) 0}}
+        <Directory Id="ProgramMenuFolder">
             <Directory Id="ProgramMenuSubfolder" Name="{{.Product}}">
-               {{range $i, $e := .Shortcuts}}
-               <Component Id="ApplicationShortcuts{{$i}}" Guid="*">
-                  <Shortcut Id="ApplicationShortcut{{$i}}" Name="{{$e.Name}}" Description="{{$e.Description}}" Target="{{$e.Target}}" WorkingDirectory="{{$e.WDir}}"
+                {{range $i, $e := .Shortcuts}}
+                <Component Id="ApplicationShortcuts{{$i}}" Guid="*">
+                    <Shortcut Id="ApplicationShortcut{{$i}}" Name="{{$e.Name}}" Description="{{$e.Description}}" Target="{{$e.Target}}" WorkingDirectory="{{$e.WDir}}"
                         {{if gt ($e.Arguments | len) 0}}Arguments="{{$e.Arguments}}"{{end}}>
                         {{if gt ($e.Icon | len) 0}}<Icon Id="Icon{{$i}}" SourceFile="{{$e.Icon}}"/>{{end}}
-                  </Shortcut>
-                  <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
-               </Component>
-               {{end}}
-               <Component Id="RemoveApplicationShortcuts" Guid="*">
-                  <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
-                  <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Type="string" Value="" KeyPath="yes"/>
-               </Component>
+                    </Shortcut>
+                    <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
+                    <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
+                </Component>
+                {{end}}
             </Directory>
-         </Directory>
-         {{end}}
+        </Directory>
+        {{end}}
 
       </Directory>
 
@@ -167,11 +164,8 @@
          <ComponentRef Id="RegistryEntries{{$i}}"/>
          {{end}}
          <ComponentRef Id="RegistryEntriesARP"/>
-         {{if gt (.Shortcuts | len) 0}}
          {{range $i, $e := .Shortcuts}}
          <ComponentRef Id="ApplicationShortcuts{{$i}}"/>
-         {{end}}
-         <ComponentRef Id="RemoveApplicationShortcuts"/>
          {{end}}
          {{range $i, $e := .Directories}}
          <ComponentGroupRef Id="AppFiles{{$i}}" />
