@@ -120,7 +120,7 @@
 
         {{if gt (.Shortcuts | len) 0}}
         <Directory Id="ProgramMenuFolder">
-            <Directory Id="ProgramMenuSubfolder" Name="{{.Product}}">
+            <Directory Id="ProgramMenuSubfolder" Name="{{.Company}}">
                 {{range $i, $e := .Shortcuts}}
                 <Component Id="ApplicationShortcuts{{$i}}" Guid="*">
                     <Shortcut Id="ApplicationShortcut{{$i}}" Name="{{$e.Name}}" Description="{{$e.Description}}" Target="{{$e.Target}}" WorkingDirectory="{{$e.WDir}}"

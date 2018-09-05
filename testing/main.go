@@ -48,30 +48,30 @@ func main() {
 	mustExec(pkg, "Packaging failed %v")
 	mustExist(msi, "Package file is missing %v")
 
-	packageInstall := makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt", "MINIMUMBUILD=0")
+	packageInstall := makeCmd("msiexec", "/i", msi, "/q", "/l*v", "log-install.txt", "MINIMUMBUILD=0")
 	mustFail(packageInstall.Exec(), "Package installation succeeded")
 	content := readLog("log-install.txt")
 	mustContain(content, "Product: hello -- some condition message")
 	mustContain(content, "Product: hello -- Installation failed")
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
-	packageInstall = makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt")
+	packageInstall = makeCmd("msiexec", "/i", msi, "/q", "/l*v", "log-install.txt")
 	mustExec(packageInstall, "Package installation failed %v")
 	content = readLog("log-install.txt")
 	mustContain(content, "Product: hello -- Installation completed successfully.")
 	mustContain(content, "Windows Installer installed the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
-	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
 	mustBeInstalled(version, true)
+	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
-	packageReinstall := makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt")
+	packageReinstall := makeCmd("msiexec", "/i", msi, "/q", "/l*v", "log-install.txt")
 	mustExec(packageReinstall, "Package re-installation failed %v")
 	content = readLog("log-install.txt")
 	mustContain(content, "Product: hello -- Configuration completed successfully.")
 	mustContain(content, "Windows Installer reconfigured the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
-	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
 	mustBeInstalled(version, true)
+	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
 	oldMsi := msi
 	msi = "hello-2.msi"
@@ -84,13 +84,13 @@ func main() {
 	)
 	mustExec(pkg, "Packaging failed %v")
 	mustExist(msi, "Package file is missing %v")
-	packageDowngrade := makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt")
+	packageDowngrade := makeCmd("msiexec", "/i", msi, "/q", "/l*v", "log-install.txt")
 	mustFail(packageDowngrade.Exec(), "Package downgrade succeeded")
 	content = readLog("log-install.txt")
 	mustContain(content, "Product: hello -- A newer version of this software is already installed.")
-	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
 	mustBeInstalled(version, true)
+	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
 	version = "12.34.5679" // version up
 	pkg = makeCmd("C:/go-msi/go-msi.exe", "make",
@@ -102,49 +102,49 @@ func main() {
 	)
 	mustExec(pkg, "Packaging failed %v")
 	mustExist(msi, "Package file is missing %v")
-	packageUpgrade := makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt")
+	packageUpgrade := makeCmd("msiexec", "/i", msi, "/q", "/l*v", "log-install.txt")
 	mustExec(packageUpgrade, "Package upgrade failed %v")
 	content = readLog("log-install.txt")
 	mustContain(content, "Product: hello -- Installation completed successfully.")
 	mustContain(content, "Windows Installer installed the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
-	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
 	mustBeInstalled(version, true)
+	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
-	packageUninstall := makeCmd("msiexec", "/x", oldMsi, "/q", "/log", "log-uninstall.txt")
+	packageUninstall := makeCmd("msiexec", "/x", oldMsi, "/q", "/l*v", "log-uninstall.txt")
 	mustFail(packageUninstall.Exec(), "Old package uninstall succeeded")
 	content = readLog("log-uninstall.txt")
 	mustContain(content, "This action is only valid for products that are currently installed")
-	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
 
 	mustBeInstalled(version, true)
+	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
 
-	packageUninstall = makeCmd("msiexec", "/x", msi, "/q", "/log", "log-uninstall.txt")
+	packageUninstall = makeCmd("msiexec", "/x", msi, "/q", "/l*v", "log-uninstall.txt")
 	mustExec(packageUninstall, "Package uninstall failed %v")
 	content = readLog("log-uninstall.txt")
 	mustContain(content, "Product: hello -- Removal completed successfully.")
 	mustContain(content, "Windows Installer removed the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
-	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
 
 	mustNotBeInstalled()
+	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
 
-	packageInstall = makeCmd("msiexec", "/i", msi, "/q", "/log", "log-install.txt", "STARTMENUSHORTCUT=no")
+	packageInstall = makeCmd("msiexec", "/i", msi, "/q", "/l*v", "log-install.txt", "STARTMENUSHORTCUT=no")
 	mustExec(packageInstall, "Package installation failed %v")
 	content = readLog("log-install.txt")
 	mustContain(content, "Product: hello -- Installation completed successfully.")
 	mustContain(content, "Windows Installer installed the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
-	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
 	mustBeInstalled(version, false)
+	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
-	packageUninstall = makeCmd("msiexec", "/x", msi, "/q", "/log", "log-uninstall.txt")
+	packageUninstall = makeCmd("msiexec", "/x", msi, "/q", "/l*v", "log-uninstall.txt")
 	mustExec(packageUninstall, "Package uninstall failed %v")
 	content = readLog("log-uninstall.txt")
 	mustContain(content, "Product: hello -- Removal completed successfully.")
 	mustContain(content, "Windows Installer removed the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
-	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
 
 	mustNotBeInstalled()
+	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
 
 	version = "0.0.1"
 	msi = "hello-choco.msi"
@@ -195,8 +195,8 @@ func mustBeInstalled(version string, shortcut bool) {
 	readDir("C:/Program Files/hello")
 	readDir("C:/Program Files/hello/assets")
 	if shortcut {
-		readDir("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello")
-		mustExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello/hello.lnk", "Shortcut link is missing %v")
+		readDir("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon")
+		mustExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon/hello.lnk", "Shortcut link is missing %v")
 	}
 
 	mgr, svc := mustHaveWindowsService(service)
@@ -215,7 +215,7 @@ func mustNotBeInstalled() {
 	mustNotQueryHello(url)
 
 	mustNotExist("C:/Program Files/hello")
-	mustNotExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello")
+	mustNotExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon")
 
 	// mustShowEnv("$env:path")
 	mustEnvEq("$env:some", "")
@@ -224,9 +224,6 @@ func mustNotBeInstalled() {
 	mustNoReg(`HKLM\Software\mh-cbon`)
 	mustNoReg(`HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\hello`)
 	mustNoReg(`HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\hello`)
-
-	confirm(rmFile("log-install.txt"), "install log removal")
-	confirm(rmFile("log-uninstall.txt"), "uninstall log removal")
 }
 
 func mustHaveWindowsService(n string) (*mgr.Mgr, *mgr.Service) {
