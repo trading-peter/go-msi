@@ -44,6 +44,15 @@
       "system": "yes",
       "action": "set",
       "part": "last"
+    },
+    {
+      "name": "condition",
+      "value": "ok",
+      "permanent": "no",
+      "system": "no",
+      "action": "set",
+      "part": "last",
+      "condition": "ENVVAR ~= \"yes\""
     }
   ],
   "registries": [
@@ -98,6 +107,10 @@
     },
     {
       "id": "STARTMENUSHORTCUT",
+      "value": "yes"
+    },
+    {
+      "id": "ENVVAR",
       "value": "yes"
     }
   ],

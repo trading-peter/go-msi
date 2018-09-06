@@ -149,6 +149,7 @@ type Environment struct {
 	System    string `json:"system"`
 	Action    string `json:"action"`
 	Part      string `json:"part"`
+	Condition string `json:"condition,omitempty"`
 }
 
 // Shortcut is the struct to decode shortcut value of the wix.json file.
