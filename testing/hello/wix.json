@@ -21,26 +21,40 @@
         "start": "auto",
         "display-name": "Hello!",
         "description": "The hello service",
-        "arguments": "v[ProductVersion]"
+        "arguments": "[ProductVersion]"
       }
     }
   ],
   "directories": [
     "some/assets"
   ],
-  "env": {
-    "guid": "",
-    "vars": [
-      {
-        "name": "some",
-        "value": "value",
-        "permanent": "no",
-        "system": "no",
-        "action": "set",
-        "part": "last"
-      }
-    ]
-  },
+  "environments": [
+    {
+      "name": "some",
+      "value": "value",
+      "permanent": "no",
+      "system": "no",
+      "action": "set",
+      "part": "last"
+    },
+    {
+      "name": "path",
+      "value": "[INSTALLDIR]",
+      "permanent": "no",
+      "system": "yes",
+      "action": "set",
+      "part": "last"
+    },
+    {
+      "name": "condition",
+      "value": "ok",
+      "permanent": "no",
+      "system": "no",
+      "action": "set",
+      "part": "last",
+      "condition": "ENVVAR ~= \"yes\""
+    }
+  ],
   "registries": [
     {
       "path": "HKCU\\Software\\mh-cbon\\hello",
@@ -62,8 +76,8 @@
       "description": "hello web server",
       "target": "[INSTALLDIR]hello.exe",
       "wdir": "INSTALLDIR",
-      "arguments": "",
-      "icon": "ico.ico"
+      "icon": "ico.ico",
+      "condition": "STARTMENUSHORTCUT ~= \"yes\""
     }
   ],
   "choco": {
@@ -90,6 +104,14 @@
     {
       "id": "MINIMUMBUILD",
       "value": "99999"
+    },
+    {
+      "id": "STARTMENUSHORTCUT",
+      "value": "yes"
+    },
+    {
+      "id": "ENVVAR",
+      "value": "yes"
     }
   ],
   "conditions": [

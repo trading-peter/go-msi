@@ -17,6 +17,7 @@ import (
 
 // WixManifest is the struct to decode a wix.json file.
 type WixManifest struct {
+	Compression    string         `json:"compression,omitempty"`
 	Product        string         `json:"product"`
 	Company        string         `json:"company"`
 	Version        Version        `json:"-"`
@@ -30,7 +31,7 @@ type WixManifest struct {
 	Directories    []string       `json:"directories,omitempty"`
 	DirNames       []string       `json:"-"`
 	RelDirs        []string       `json:"-"`
-	Env            WixEnvList     `json:"env"`
+	Environments   []Environment  `json:"environments,omitempty"`
 	Registries     []RegistryItem `json:"registries,omitempty"`
 	Shortcuts      []Shortcut     `json:"shortcuts,omitempty"`
 	Choco          ChocoSpec      `json:"choco"`
@@ -46,9 +47,6 @@ type Version struct {
 	User    string
 	Display string
 	MSI     string
-	Major   int64
-	Minor   int64
-	Build   int64
 	Hex     int64
 }
 
@@ -143,20 +141,15 @@ type Condition struct {
 	Message   string `json:"message"`
 }
 
-// WixEnvList is the struct to decode env key of the wix.json file.
-type WixEnvList struct {
-	GUID string   `json:"guid,omitempty"`
-	Vars []WixEnv `json:"vars,omitempty"`
-}
-
-// WixEnv is the struct to decode env value of the wix.json file.
-type WixEnv struct {
+// Environment is the struct to decode environment variables of the wix.json file.
+type Environment struct {
 	Name      string `json:"name"`
 	Value     string `json:"value"`
 	Permanent string `json:"permanent"`
 	System    string `json:"system"`
 	Action    string `json:"action"`
 	Part      string `json:"part"`
+	Condition string `json:"condition,omitempty"`
 }
 
 // Shortcut is the struct to decode shortcut value of the wix.json file.
@@ -164,15 +157,17 @@ type Shortcut struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Target      string `json:"target"`
-	WDir        string `json:"wdir"`
-	Arguments   string `json:"arguments"`
-	Icon        string `json:"icon"` // a path to the ico file, no space in it.
+	WDir        string `json:"wdir,omitempty"`
+	Arguments   string `json:"arguments,omitempty"`
+	Icon        string `json:"icon,omitempty"`
+	Condition   string `json:"condition,omitempty"`
 }
 
 // RegistryItem is the struct to decode a registry item.
 type RegistryItem struct {
 	Registry
-	Values []RegistryValue `json:"values,omitempty"`
+	Values    []RegistryValue `json:"values,omitempty"`
+	Condition string          `json:"condition,omitempty"`
 }
 
 // RegistryValue is the struct to decode a registry value.
@@ -230,14 +225,6 @@ func (wixFile *WixManifest) SetGuids(force bool) (bool, error) {
 		wixFile.UpgradeCode = guid
 		updated = true
 	}
-	if (wixFile.Env.GUID == "" || force) && len(wixFile.Env.Vars) > 0 {
-		guid, err := makeGUID()
-		if err != nil {
-			return updated, err
-		}
-		wixFile.Env.GUID = guid
-		updated = true
-	}
 	return updated, nil
 }
 
@@ -251,13 +238,7 @@ func makeGUID() (string, error) {
 
 // NeedGUID tells if the manifest json file is missing guid values.
 func (wixFile *WixManifest) NeedGUID() bool {
-	if wixFile.UpgradeCode == "" {
-		return true
-	}
-	if wixFile.Env.GUID == "" && len(wixFile.Env.Vars) > 0 {
-		return true
-	}
-	return false
+	return wixFile.UpgradeCode == ""
 }
 
 // RewriteFilePaths Reads Files and Directories of the wix.json file
@@ -325,24 +306,21 @@ func (wixFile *WixManifest) Normalize() error {
 	// So, if the version has metadata/prerelease values,
 	// lets get ride of those and save the workable version
 	// into Version.MSI field
-	if build, err := strconv.ParseInt(wixFile.Version.User, 10, 64); err == nil {
-		wixFile.Version.Major = build >> 24
-		wixFile.Version.Minor = (build - wixFile.Version.Major<<24) >> 16
-		wixFile.Version.Build = build - wixFile.Version.Major<<24 - wixFile.Version.Minor<<16
-		wixFile.Version.Hex = build
+	if n, err := strconv.ParseInt(wixFile.Version.User, 10, 64); err == nil {
+		major := n >> 24
+		minor := (n - major<<24) >> 16
+		build := n - major<<24 - minor<<16
+		wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d", major, minor, build)
+		wixFile.Version.Hex = n
 	} else if v, err := semver.NewVersion(wixFile.Version.User); err == nil {
 		if v.Major() > 255 || v.Minor() > 255 || v.Patch() > 65535 {
 			return fmt.Errorf("Failed to parse version '%v', fields must not exceed maximum values of 255.255.65535", wixFile.Version.User)
 		}
 		wixFile.Version.MSI = v.String()
-		wixFile.Version.Major = v.Major()
-		wixFile.Version.Minor = v.Minor()
-		wixFile.Version.Build = v.Patch()
 		wixFile.Version.Hex = v.Major()<<24 + v.Minor()<<16 + v.Patch()
 	} else {
 		return fmt.Errorf("Failed to parse version '%v', must be either a semantic version or a single build/revision number", wixFile.Version.User)
 	}
-	wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d", wixFile.Version.Major, wixFile.Version.Minor, wixFile.Version.Build)
 
 	if wixFile.Banner != "" {
 		path, err := filepath.Abs(wixFile.Banner)

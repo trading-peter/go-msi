@@ -19,14 +19,9 @@
       <Package InstallerVersion="200" Compressed="yes" Description="{{.Product}} {{.Version.Display}}"
                Comments="This installs {{.Product}} {{.Version.Display}}" InstallScope="perMachine"/>
 
-      <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
+      <Media Id="1" Cabinet="product.cab" EmbedCab="yes" {{if gt (.Compression | len) 0}}CompressionLevel="{{.Compression}}"{{end}}/>
 
-      <Upgrade Id="{{.UpgradeCode}}">
-         <UpgradeVersion Minimum="{{.Version.MSI}}" OnlyDetect="yes" Property="NEWERVERSIONDETECTED"/>
-         <UpgradeVersion Minimum="0.0.0" Maximum="{{.Version.MSI}}" IncludeMinimum="yes" IncludeMaximum="no"
-                         Property="OLDERVERSIONBEINGUPGRADED"/>
-      </Upgrade>
-      <Condition Message="A newer version of this software is already installed.">NOT NEWERVERSIONDETECTED</Condition>
+      <MajorUpgrade DowngradeErrorMessage="A newer version of this software is already installed."/>
 
       {{if gt (.Banner | len) 0 }} <WixVariable Id="WixUIBannerBmp" Value="{{.Banner}}"/> {{end}}
       {{if gt (.Dialog | len) 0 }} <WixVariable Id="WixUIDialogBmp" Value="{{.Dialog}}"/> {{end}}
@@ -39,7 +34,7 @@
       <Property Id="ARPSYSTEMCOMPONENT" Value="1"/>
 
       {{range $i, $p := .Properties}}
-      <Property Id="{{$p.ID}}" {{if $p.Value}}Value="{{$p.Value}}"{{else if not $p.Registry}}Secure="yes"{{end}}>
+      <Property Id="{{$p.ID}}" {{if $p.Value}}Value="{{$p.Value}}"{{end}} {{if not $p.Registry}}Secure="yes"{{end}}>
          {{if $p.Registry}}
          <RegistrySearch Id="{{$p.ID}}Search" Root="{{$p.Registry.Root}}" Key="{{$p.Registry.Key}}"
             {{if gt ($p.Registry.Name | len) 0}} Name="{{$p.Registry.Name}}" {{end}} Type="raw"/>
@@ -52,16 +47,16 @@
 
       <Directory Id="TARGETDIR" Name="SourceDir">
 
-         <Directory Id="$(var.Program_Files)">
+        <Directory Id="$(var.Program_Files)">
             <Directory Id="INSTALLDIR" Name="{{.Product}}">
                 {{range $i, $e := .Files}}
                 <Component Id="ApplicationFiles{{$i}}" Guid="*">
                     <File Id="ApplicationFile{{$i}}" Source="{{$e.Path}}"/>
-                    {{if ($e.Service)}}
+                    {{if $e.Service}}
                     <ServiceInstall Id="ServiceInstall{{$i}}" Type="ownProcess" Name="{{$e.Service.Name}}" Start="{{$e.Service.Start}}" Account="LocalSystem" ErrorControl="normal"
-                     {{if gt ($e.Service.DisplayName | len) 0}} DisplayName="{{$e.Service.DisplayName}}" {{end}}
-                     {{if gt ($e.Service.Description | len) 0}} Description="{{$e.Service.Description}}" {{end}}
-                     {{if gt ($e.Service.Arguments | len) 0}} Arguments="{{$e.Service.Arguments}}" {{end}} />
+                    {{if gt ($e.Service.DisplayName | len) 0}} DisplayName="{{$e.Service.DisplayName}}" {{end}}
+                    {{if gt ($e.Service.Description | len) 0}} Description="{{$e.Service.Description}}" {{end}}
+                    {{if gt ($e.Service.Arguments | len) 0}} Arguments="{{$e.Service.Arguments}}" {{end}} />
                     <ServiceControl Id="ServiceControl{{$i}}" Name="{{$e.Service.Name}}" Start="install" Stop="both" Remove="uninstall"/>
                     {{end}}
                  </Component>
@@ -70,19 +65,13 @@
                <Directory Id="APPDIR{{$i}}" Name="{{$e}}" />
                {{end}}
             </Directory>
-         </Directory>
+        </Directory>
 
-         {{if gt (.Env.Vars | len) 0}}
-         <Component Id="ENVS" Guid="{{.Env.GUID}}">
-          {{range $i, $e := .Env.Vars}}
-          <Environment Id="ENV{{$i}}"
-            Name="{{$e.Name}}"
-            Value="{{$e.Value}}"
-            Permanent="{{$e.Permanent}}"
-            Part="{{$e.Part}}"
-            Action="{{$e.Action}}"
-            System="{{$e.System}}" />
-          {{end}}
+        {{range $i, $e := .Environments}}
+        <Component Id="Environments{{$i}}" Guid="*">
+            <Environment Id="Environment{{$i}}" Name="{{$e.Name}}" Value="{{$e.Value}}" Permanent="{{$e.Permanent}}" Part="{{$e.Part}}" Action="{{$e.Action}}" System="{{$e.System}}"/>
+            <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="envvar{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
+            {{if gt ($e.Condition | len) 0}}<Condition><![CDATA[{{$e.Condition}}]]></Condition>{{end}}
         </Component>
         {{end}}
 
@@ -93,17 +82,18 @@
                 <RegistryValue Type="{{$v.Type}}" {{if gt ($v.Name | len) 0}} Name="{{$v.Name}}" {{end}} Value="{{$v.Value}}" {{if eq $i 0}}{{if eq $j 0}} KeyPath="yes" {{end}}{{end}}/>
                 {{end}}
             </RegistryKey>
+            {{if gt ($r.Condition | len) 0}}<Condition><![CDATA[{{$r.Condition}}]]></Condition>{{end}}
         </Component>
         {{end}}
         <Component Id="RegistryEntriesARP" Guid="*">
             <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\[ProductName]">
-                <RegistryValue Type="string" Name="AuthorizedCDFPrefix" Value="" KeyPath="yes"/>
+                <RegistryValue Type="string" Name="AuthorizedCDFPrefix" Value=""/>
                 <RegistryValue Type="string" Name="Comments" Value="{{.Info.Comments}}"/>
                 <RegistryValue Type="string" Name="Contact" Value="{{.Info.Contact}}"/>
                 {{if gt (.Icon | len) 0 }}
                 <RegistryValue Type="string" Name="DisplayIcon" Value="%SystemRoot%\Installer\[ProductCode]\Installer.Ico"/>
                 {{end}}
-                <RegistryValue Type="string" Name="DisplayName" Value="[ProductName]"/>
+                <RegistryValue Type="string" Name="DisplayName" Value="[ProductName]" KeyPath="yes"/>
                 <RegistryValue Type="string" Name="DisplayVersion" Value="{{.Version.Display}}"/>
                 <RegistryValue Type="integer" Name="EstimatedSize" Value="{{.Info.Size}}"/>
                 <RegistryValue Type="string" Name="HelpLink" Value="{{.Info.HelpLink}}"/>
@@ -119,30 +109,26 @@
                 <RegistryValue Type="string" Name="URLInfoAbout" Value="{{.Info.SupportLink}}"/>
                 <RegistryValue Type="string" Name="URLUpdateInfo" Value="{{.Info.UpdateInfoLink}}"/>
                 <RegistryValue Type="integer" Name="Version" Value="{{.Version.Hex}}"/>
-                <RegistryValue Type="integer" Name="VersionMajor" Value="{{.Version.Major}}"/>
-                <RegistryValue Type="integer" Name="VersionMinor" Value="{{.Version.Minor}}"/>
             </RegistryKey>
         </Component>
 
-         {{if gt (.Shortcuts | len) 0}}
-         <Directory Id="ProgramMenuFolder">
-            <Directory Id="ProgramMenuSubfolder" Name="{{.Product}}">
-               {{range $i, $e := .Shortcuts}}
-               <Component Id="ApplicationShortcuts{{$i}}" Guid="*">
-                  <Shortcut Id="ApplicationShortcut{{$i}}" Name="{{$e.Name}}" Description="{{$e.Description}}" Target="{{$e.Target}}" WorkingDirectory="{{$e.WDir}}"
+        {{if gt (.Shortcuts | len) 0}}
+        <Directory Id="ProgramMenuFolder">
+            <Directory Id="ProgramMenuSubfolder" Name="{{.Company}}">
+                {{range $i, $e := .Shortcuts}}
+                <Component Id="ApplicationShortcuts{{$i}}" Guid="*">
+                    <Shortcut Id="ApplicationShortcut{{$i}}" Name="{{$e.Name}}" Description="{{$e.Description}}" Target="{{$e.Target}}" WorkingDirectory="{{$e.WDir}}"
                         {{if gt ($e.Arguments | len) 0}}Arguments="{{$e.Arguments}}"{{end}}>
                         {{if gt ($e.Icon | len) 0}}<Icon Id="Icon{{$i}}" SourceFile="{{$e.Icon}}"/>{{end}}
-                  </Shortcut>
-                  <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
-               </Component>
-               {{end}}
-               <Component Id="RemoveApplicationShortcuts" Guid="*">
-                  <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
-                  <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Type="string" Value="" KeyPath="yes"/>
-               </Component>
+                    </Shortcut>
+                    {{if gt ($e.Condition | len) 0}}<Condition><![CDATA[{{$e.Condition}}]]></Condition>{{end}}
+                    <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="shortcut{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
+                    <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
+                </Component>
+                {{end}}
             </Directory>
-         </Directory>
-         {{end}}
+        </Directory>
+        {{end}}
 
       </Directory>
 
@@ -155,7 +141,6 @@
       <CustomAction Id="CustomUninstallExec{{$i}}" BinaryKey="WixCA" DllEntry="WixQuietExec" Execute="deferred" {{if gt ($e.Return | len) 0}} Return="{{$e.Return}}" {{end}} Impersonate="no"/>
       {{end}}
       <InstallExecuteSequence>
-         <RemoveExistingProducts After="InstallValidate"/>
          {{range $i, $e := .InstallHooks}}
          <Custom Action="CustomInstallExec{{$i}}" After="{{if eq $i 0}}InstallFiles{{else}}CustomInstallExec{{dec $i}}{{end}}">NOT Installed AND NOT REMOVE</Custom>
          {{end}}
@@ -165,8 +150,8 @@
       </InstallExecuteSequence>
 
       <Feature Id="DefaultFeature" Level="1">
-         {{if gt (.Env.Vars | len) 0}}
-         <ComponentRef Id="ENVS"/>
+         {{range $i, $e := .Environments}}
+         <ComponentRef Id="Environments{{$i}}"/>
          {{end}}
          {{range $i, $e := .Files}}
          <ComponentRef Id="ApplicationFiles{{$i}}"/>
@@ -175,11 +160,8 @@
          <ComponentRef Id="RegistryEntries{{$i}}"/>
          {{end}}
          <ComponentRef Id="RegistryEntriesARP"/>
-         {{if gt (.Shortcuts | len) 0}}
          {{range $i, $e := .Shortcuts}}
          <ComponentRef Id="ApplicationShortcuts{{$i}}"/>
-         {{end}}
-         <ComponentRef Id="RemoveApplicationShortcuts"/>
          {{end}}
          {{range $i, $e := .Directories}}
          <ComponentGroupRef Id="AppFiles{{$i}}" />
@@ -187,8 +169,9 @@
       </Feature>
 
       <UI>
+         <UIRef Id="WixUI_ErrorProgressText"/>
          <!-- Define the installer UI -->
-         <UIRef Id="WixUI_HK" />
+         <UIRef Id="WixUI_HK"/>
       </UI>
 
       <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
