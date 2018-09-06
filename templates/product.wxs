@@ -47,16 +47,16 @@
 
       <Directory Id="TARGETDIR" Name="SourceDir">
 
-         <Directory Id="$(var.Program_Files)">
+        <Directory Id="$(var.Program_Files)">
             <Directory Id="INSTALLDIR" Name="{{.Product}}">
                 {{range $i, $e := .Files}}
                 <Component Id="ApplicationFiles{{$i}}" Guid="*">
                     <File Id="ApplicationFile{{$i}}" Source="{{$e.Path}}"/>
-                    {{if ($e.Service)}}
+                    {{if $e.Service}}
                     <ServiceInstall Id="ServiceInstall{{$i}}" Type="ownProcess" Name="{{$e.Service.Name}}" Start="{{$e.Service.Start}}" Account="LocalSystem" ErrorControl="normal"
-                     {{if gt ($e.Service.DisplayName | len) 0}} DisplayName="{{$e.Service.DisplayName}}" {{end}}
-                     {{if gt ($e.Service.Description | len) 0}} Description="{{$e.Service.Description}}" {{end}}
-                     {{if gt ($e.Service.Arguments | len) 0}} Arguments="{{$e.Service.Arguments}}" {{end}} />
+                    {{if gt ($e.Service.DisplayName | len) 0}} DisplayName="{{$e.Service.DisplayName}}" {{end}}
+                    {{if gt ($e.Service.Description | len) 0}} Description="{{$e.Service.Description}}" {{end}}
+                    {{if gt ($e.Service.Arguments | len) 0}} Arguments="{{$e.Service.Arguments}}" {{end}} />
                     <ServiceControl Id="ServiceControl{{$i}}" Name="{{$e.Service.Name}}" Start="install" Stop="both" Remove="uninstall"/>
                     {{end}}
                  </Component>
@@ -65,19 +65,13 @@
                <Directory Id="APPDIR{{$i}}" Name="{{$e}}" />
                {{end}}
             </Directory>
-         </Directory>
+        </Directory>
 
-         {{if gt (.Env.Vars | len) 0}}
-         <Component Id="ENVS" Guid="{{.Env.GUID}}">
-          {{range $i, $e := .Env.Vars}}
-          <Environment Id="ENV{{$i}}"
-            Name="{{$e.Name}}"
-            Value="{{$e.Value}}"
-            Permanent="{{$e.Permanent}}"
-            Part="{{$e.Part}}"
-            Action="{{$e.Action}}"
-            System="{{$e.System}}" />
-          {{end}}
+        {{if gt (.Env.Vars | len) 0}}
+        <Component Id="EnvVars" Guid="{{.Env.GUID}}">
+            {{range $i, $e := .Env.Vars}}
+            <Environment Id="EnvVar{{$i}}" Name="{{$e.Name}}" Value="{{$e.Value}}" Permanent="{{$e.Permanent}}" Part="{{$e.Part}}" Action="{{$e.Action}}" System="{{$e.System}}"/>
+            {{end}}
         </Component>
         {{end}}
 
@@ -157,7 +151,7 @@
 
       <Feature Id="DefaultFeature" Level="1">
          {{if gt (.Env.Vars | len) 0}}
-         <ComponentRef Id="ENVS"/>
+         <ComponentRef Id="EnvVars"/>
          {{end}}
          {{range $i, $e := .Files}}
          <ComponentRef Id="ApplicationFiles{{$i}}"/>

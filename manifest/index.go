@@ -31,7 +31,7 @@ type WixManifest struct {
 	Directories    []string       `json:"directories,omitempty"`
 	DirNames       []string       `json:"-"`
 	RelDirs        []string       `json:"-"`
-	Env            WixEnvList     `json:"env"`
+	Env            Envs           `json:"env"`
 	Registries     []RegistryItem `json:"registries,omitempty"`
 	Shortcuts      []Shortcut     `json:"shortcuts,omitempty"`
 	Choco          ChocoSpec      `json:"choco"`
@@ -141,14 +141,14 @@ type Condition struct {
 	Message   string `json:"message"`
 }
 
-// WixEnvList is the struct to decode env key of the wix.json file.
-type WixEnvList struct {
-	GUID string   `json:"guid,omitempty"`
-	Vars []WixEnv `json:"vars,omitempty"`
+// Envs is the struct to decode env key of the wix.json file.
+type Envs struct {
+	GUID string `json:"guid,omitempty"`
+	Vars []Env  `json:"vars,omitempty"`
 }
 
-// WixEnv is the struct to decode env value of the wix.json file.
-type WixEnv struct {
+// Env is the struct to decode env value of the wix.json file.
+type Env struct {
 	Name      string `json:"name"`
 	Value     string `json:"value"`
 	Permanent string `json:"permanent"`

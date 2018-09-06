@@ -38,6 +38,14 @@
         "system": "no",
         "action": "set",
         "part": "last"
+      },
+      {
+        "name": "path",
+        "value": "[INSTALLDIR]",
+        "permanent": "no",
+        "system": "yes",
+        "action": "set",
+        "part": "last"
       }
     ]
   },

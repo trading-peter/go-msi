@@ -186,8 +186,8 @@ const (
 )
 
 func mustBeInstalled(version string, shortcut bool) {
-	// mustShowEnv("$env:path")
-	// mustEnvEq("$env:some", "value")
+	mustEnvSuffix("path", `C:\Program Files\hello\`)
+	mustEnvEq("some", "value")
 
 	mustRegEq(`HKCU\Software\mh-cbon\hello`, "Version", "some version")
 	mustRegEq(`HKCU\Software\mh-cbon\hello`, "InstallDir", `C:\Program Files\hello`)
@@ -204,10 +204,7 @@ func mustBeInstalled(version string, shortcut bool) {
 	mustHaveStartedWindowsService(service, svc)
 	mustSucceed(svc.Close(), "Failed to close the service %v")
 
-	// helloExecPath := "C:/Program Files/hello/hello.exe"
-	// mustExecHello(helloExecPath, url)
 	mustQueryHello(url, version)
-	// mustStopWindowsService(svcName, svc)
 }
 
 func mustNotBeInstalled() {
@@ -217,8 +214,8 @@ func mustNotBeInstalled() {
 	mustNotExist("C:/Program Files/hello")
 	mustNotExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon")
 
-	// mustShowEnv("$env:path")
-	mustEnvEq("$env:some", "")
+	mustEnvNotContain("path", `C:\Program Files\hello`)
+	mustEnvEq("some", "")
 
 	mustNoReg(`HKCU\Software\mh-cbon`)
 	mustNoReg(`HKLM\Software\mh-cbon`)
@@ -328,35 +325,50 @@ func mustContain(s, substr string) {
 		log.Fatalf("Failed to find %q", substr)
 	}
 }
-func mustShowEnv(e string) {
-	psShowEnv := makeCmd("PowerShell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", e)
-	mustExec(psShowEnv, "powershell command failed %v")
-	log.Printf("showEnv ok %v %q", e, psShowEnv.Stdout())
+func getEnv(env string) string {
+	value := getEnvFrom(env, "User")
+	if env == "path" || value == "" {
+		value += getEnvFrom(env, "Machine")
+	}
+	return value
+}
+func getEnvFrom(env, hive string) string {
+	cmd := makeCmd("PowerShell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", `[System.Environment]::GetEnvironmentVariable("`+env+`", "`+hive+`")`)
+	err := cmd.Exec()
+	if err != nil {
+		log.Fatalf("getEnvFrom failed: %s", err)
+	}
+	return strings.TrimSpace(cmd.Stdout())
 }
 func mustShowReg(key, value string) {
 	cmd := makeCmd("reg", "query", key, "/v", value)
 	mustExec(cmd, "registry query command failed %v")
 	log.Printf(`showReg ok %v\%v %q`, key, value, cmd.Stdout())
 }
-func maybeShowEnv(e string) *cmdExec {
-	psShowEnv := makeCmd("PowerShell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", e)
-	warnExec(psShowEnv, "powershell command failed %v")
-	log.Printf("showEnv ok %v %q", e, psShowEnv.Stdout())
-	return psShowEnv
-}
 func mustChdir(path string) {
 	mustSucceed(os.Chdir(path), fmt.Sprintf("chDir failed %q\n%%v", path))
 	log.Printf("chdir ok %v", path)
 }
 func mustEnvEq(env string, expect string, format ...string) {
-	c := maybeShowEnv(env)
-	got := c.Stdout()
-	if len(got) > 0 {
-		got = got[0 : len(got)-2]
+	got := getEnv(env)
+	if got != expect {
+		log.Fatalf("Env %q is not equal to %q, got=%q", env, expect, got)
 	}
-	f := fmt.Sprintf("Env %q is not equal to want=%q, got=%q", env, expect, got)
-	mustSucceed(isTrue(got == expect, f))
 	log.Printf("mustEnvEq ok %v=%q", env, expect)
+}
+func mustEnvSuffix(env string, expect string, format ...string) {
+	got := getEnv(env)
+	if !strings.HasSuffix(got, ";"+expect) {
+		log.Fatalf("Env %q does not have suffix %q, got=%q", env, expect, got)
+	}
+	log.Printf("mustEnvEq ok %v has suffix %q", env, expect)
+}
+func mustEnvNotContain(env string, expect string, format ...string) {
+	got := getEnv(env)
+	if strings.Index(got, expect) > 0 {
+		log.Fatalf("Env %q contains %q, got=%q", env, expect, got)
+	}
+	log.Printf("mustEnvEq ok %v does contain %q", env, expect)
 }
 func mustRegEq(key, value, expected string) {
 	cmd := makeCmd("reg", "query", key, "/v", value)
