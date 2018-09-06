@@ -17,6 +17,7 @@ import (
 
 // WixManifest is the struct to decode a wix.json file.
 type WixManifest struct {
+	Compression    string         `json:"compression,omitempty"`
 	Product        string         `json:"product"`
 	Company        string         `json:"company"`
 	Version        Version        `json:"-"`

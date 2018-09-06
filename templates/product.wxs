@@ -19,7 +19,7 @@
       <Package InstallerVersion="200" Compressed="yes" Description="{{.Product}} {{.Version.Display}}"
                Comments="This installs {{.Product}} {{.Version.Display}}" InstallScope="perMachine"/>
 
-      <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
+      <Media Id="1" Cabinet="product.cab" EmbedCab="yes" {{if gt (.Compression | len) 0}}CompressionLevel="{{.Compression}}"{{end}}/>
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of this software is already installed."/>
 
