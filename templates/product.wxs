@@ -67,11 +67,10 @@
             </Directory>
         </Directory>
 
-        {{if gt (.Env.Vars | len) 0}}
-        <Component Id="EnvVars" Guid="{{.Env.GUID}}">
-            {{range $i, $e := .Env.Vars}}
-            <Environment Id="EnvVar{{$i}}" Name="{{$e.Name}}" Value="{{$e.Value}}" Permanent="{{$e.Permanent}}" Part="{{$e.Part}}" Action="{{$e.Action}}" System="{{$e.System}}"/>
-            {{end}}
+        {{range $i, $e := .Environments}}
+        <Component Id="Environments{{$i}}" Guid="*">
+            <Environment Id="Environment{{$i}}" Name="{{$e.Name}}" Value="{{$e.Value}}" Permanent="{{$e.Permanent}}" Part="{{$e.Part}}" Action="{{$e.Action}}" System="{{$e.System}}"/>
+            <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="envvar{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
         </Component>
         {{end}}
 
@@ -122,7 +121,7 @@
                         {{if gt ($e.Icon | len) 0}}<Icon Id="Icon{{$i}}" SourceFile="{{$e.Icon}}"/>{{end}}
                     </Shortcut>
                     {{if gt ($e.Condition | len) 0}}<Condition><![CDATA[{{$e.Condition}}]]></Condition>{{end}}
-                    <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
+                    <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="shortcut{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
                     <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
                 </Component>
                 {{end}}
@@ -150,8 +149,8 @@
       </InstallExecuteSequence>
 
       <Feature Id="DefaultFeature" Level="1">
-         {{if gt (.Env.Vars | len) 0}}
-         <ComponentRef Id="EnvVars"/>
+         {{range $i, $e := .Environments}}
+         <ComponentRef Id="Environments{{$i}}"/>
          {{end}}
          {{range $i, $e := .Files}}
          <ComponentRef Id="ApplicationFiles{{$i}}"/>

@@ -31,7 +31,7 @@ type WixManifest struct {
 	Directories    []string       `json:"directories,omitempty"`
 	DirNames       []string       `json:"-"`
 	RelDirs        []string       `json:"-"`
-	Env            Envs           `json:"env"`
+	Environments   []Environment  `json:"environments,omitempty"`
 	Registries     []RegistryItem `json:"registries,omitempty"`
 	Shortcuts      []Shortcut     `json:"shortcuts,omitempty"`
 	Choco          ChocoSpec      `json:"choco"`
@@ -141,14 +141,8 @@ type Condition struct {
 	Message   string `json:"message"`
 }
 
-// Envs is the struct to decode env key of the wix.json file.
-type Envs struct {
-	GUID string `json:"guid,omitempty"`
-	Vars []Env  `json:"vars,omitempty"`
-}
-
-// Env is the struct to decode env value of the wix.json file.
-type Env struct {
+// Environment is the struct to decode environment variables of the wix.json file.
+type Environment struct {
 	Name      string `json:"name"`
 	Value     string `json:"value"`
 	Permanent string `json:"permanent"`
@@ -230,14 +224,6 @@ func (wixFile *WixManifest) SetGuids(force bool) (bool, error) {
 		wixFile.UpgradeCode = guid
 		updated = true
 	}
-	if (wixFile.Env.GUID == "" || force) && len(wixFile.Env.Vars) > 0 {
-		guid, err := makeGUID()
-		if err != nil {
-			return updated, err
-		}
-		wixFile.Env.GUID = guid
-		updated = true
-	}
 	return updated, nil
 }
 
@@ -251,13 +237,7 @@ func makeGUID() (string, error) {
 
 // NeedGUID tells if the manifest json file is missing guid values.
 func (wixFile *WixManifest) NeedGUID() bool {
-	if wixFile.UpgradeCode == "" {
-		return true
-	}
-	if wixFile.Env.GUID == "" && len(wixFile.Env.Vars) > 0 {
-		return true
-	}
-	return false
+	return wixFile.UpgradeCode == ""
 }
 
 // RewriteFilePaths Reads Files and Directories of the wix.json file

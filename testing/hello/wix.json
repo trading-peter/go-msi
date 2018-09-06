@@ -28,27 +28,24 @@
   "directories": [
     "some/assets"
   ],
-  "env": {
-    "guid": "",
-    "vars": [
-      {
-        "name": "some",
-        "value": "value",
-        "permanent": "no",
-        "system": "no",
-        "action": "set",
-        "part": "last"
-      },
-      {
-        "name": "path",
-        "value": "[INSTALLDIR]",
-        "permanent": "no",
-        "system": "yes",
-        "action": "set",
-        "part": "last"
-      }
-    ]
-  },
+  "environments": [
+    {
+      "name": "some",
+      "value": "value",
+      "permanent": "no",
+      "system": "no",
+      "action": "set",
+      "part": "last"
+    },
+    {
+      "name": "path",
+      "value": "[INSTALLDIR]",
+      "permanent": "no",
+      "system": "yes",
+      "action": "set",
+      "part": "last"
+    }
+  ],
   "registries": [
     {
       "path": "HKCU\\Software\\mh-cbon\\hello",
