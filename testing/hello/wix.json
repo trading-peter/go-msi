@@ -88,7 +88,35 @@
   },
   "hooks": [
     {
-      "command": "this will fail and be ignored",
+      "command": "cmd /c @echo install hook\u003e\"[INSTALLDIR]install-hook.txt\"",
+      "when": "install"
+    },
+    {
+      "command": "cmd /c del \"[INSTALLDIR]install-hook.txt\"",
+      "when": "uninstall"
+    },
+    {
+      "command": "cmd /c @echo install hook with passing condition\u003e\"[INSTALLDIR]install-hook-with-passing-condition.txt\"",
+      "when": "install",
+      "condition": "1 \u003e 0"
+    },
+    {
+      "command": "cmd /c del \"[INSTALLDIR]install-hook-with-passing-condition.txt\"",
+      "when": "uninstall",
+      "condition": "1 \u003e 0"
+    },
+    {
+      "command": "install hook with failing condition should not be run",
+      "when": "install",
+      "condition": "0 \u003e 1"
+    },
+    {
+      "command": "install hook with failing condition should not be run",
+      "when": "uninstall",
+      "condition": "0 \u003e 1"
+    },
+    {
+      "command": "ignored failing hook",
       "when": "install",
       "return": "ignore"
     }
