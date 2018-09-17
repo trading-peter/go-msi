@@ -221,7 +221,6 @@ func mustHaveWindowsService(n string) (*mgr.Mgr, *mgr.Service) {
 	if s == nil {
 		mustSucceed(err, "Failed to find the service %v")
 	}
-	log.Printf("SUCCESS: Service %q exists\n", n)
 	return mgr, s
 }
 
@@ -236,7 +235,6 @@ func mustNotHaveWindowsService(n string) {
 	} else {
 		defer s.Close()
 	}
-	log.Printf("SUCCESS: Service %q does not exist\n", n)
 }
 
 func mustHaveStartedWindowsService(n string, s *mgr.Service) {
@@ -245,7 +243,6 @@ func mustHaveStartedWindowsService(n string, s *mgr.Service) {
 	if status.State != svc.Running {
 		mustSucceed(fmt.Errorf("Service not started %v", n))
 	}
-	log.Printf("SUCCESS: Service %q was started\n", n)
 }
 
 func mustStopWindowsService(n string, s *mgr.Service) {
@@ -254,27 +251,18 @@ func mustStopWindowsService(n string, s *mgr.Service) {
 	if status.State != svc.Stopped {
 		mustSucceed(fmt.Errorf("Service not stopped %v", n))
 	}
-	log.Printf("SUCCESS: Service %q was stopped\n", n)
 }
 
 func mustQueryHello(u, v string) {
 	res := getURL(u)
 	mustExec(res, "HTTP request failed %v")
 	mustEqStdout(res, "["+v+"] hello, world\n", "Invalid HTTP response got=%q, want=%q")
-	log.Printf("SUCCESS: Hello service query %q succeed\n", u)
 }
 func mustNotQueryHello(u string) {
 	res := getURL(u)
 	mustFail(res.Exec(), "HTTP request succeeded")
 }
 
-func confirm(err error, message string) {
-	if err == nil {
-		log.Printf("DONE: %v\n", message)
-	} else {
-		log.Printf("NOT-DONE: (%v) %v", err, message)
-	}
-}
 func mustSucceed(err error, format ...string) {
 	if err != nil {
 		if len(format) > 0 {
@@ -284,12 +272,6 @@ func mustSucceed(err error, format ...string) {
 	}
 }
 func mustSucceedDetailed(err error, e interface{}, format ...string) {
-	if x, ok := e.(stdouter); ok {
-		fmt.Printf("%T:%v\n", x, x.Stdout())
-	}
-	if x, ok := e.(stderrer); ok {
-		fmt.Printf("%T:%v\n", x, x.Stderr())
-	}
 	if err != nil {
 		if len(format) > 0 {
 			err = fmt.Errorf(format[0], err)
@@ -311,7 +293,6 @@ func mustFail(err error, format ...string) {
 
 func mustContain(s, substr string) {
 	if strings.Index(s, substr) == -1 {
-		log.Println(s)
 		log.Fatalf("Failed to find %q", substr)
 	}
 }
@@ -339,32 +320,27 @@ func getEnvFrom(env, hive string) string {
 func mustShowReg(key, value string) {
 	cmd := makeCmd("reg", "query", key, "/v", value)
 	mustExec(cmd, "registry query command failed %v")
-	log.Printf(`showReg ok %v\%v %q`, key, value, cmd.Stdout())
 }
 func mustChdir(path string) {
 	mustSucceed(os.Chdir(path), fmt.Sprintf("chDir failed %q\n%%v", path))
-	log.Printf("chdir ok %v", path)
 }
 func mustEnvEq(env string, expect string, format ...string) {
 	got := getEnv(env)
 	if got != expect {
 		log.Fatalf("Env %q is not equal to %q, got=%q", env, expect, got)
 	}
-	log.Printf("mustEnvEq ok %v=%q", env, expect)
 }
 func mustEnvSuffix(env string, expect string, format ...string) {
 	got := getEnv(env)
 	if !strings.HasSuffix(got, ";"+expect) {
 		log.Fatalf("Env %q does not have suffix %q, got=%q", env, expect, got)
 	}
-	log.Printf("mustEnvEq ok %v has suffix %q", env, expect)
 }
 func mustEnvNotContain(env string, expect string, format ...string) {
 	got := getEnv(env)
 	if strings.Index(got, expect) > 0 {
 		log.Fatalf("Env %q contains %q, got=%q", env, expect, got)
 	}
-	log.Printf("mustEnvEq ok %v does contain %q", env, expect)
 }
 func mustRegEq(key, value, expected string) {
 	cmd := makeCmd("reg", "query", key, "/v", value)
@@ -380,7 +356,6 @@ func mustContainFile(path, file string) {
 	_, ex := s[file]
 	f := fmt.Sprintf("File %q not found in %q", file, path)
 	mustSucceed(isTrue(ex, f))
-	log.Printf("mustContainFile ok %v %v", path, file)
 }
 func mustLs(path string) map[string]os.FileInfo {
 	ret := make(map[string]os.FileInfo)
@@ -423,7 +398,6 @@ func mustExec(e execer, format ...string) {
 		format = []string{"Exec err: %v"}
 	}
 	mustSucceedDetailed(e.Exec(), e, format[0])
-	log.Printf("mustExec success %v", e)
 }
 
 func warnExec(e execer, format ...string) {
@@ -431,7 +405,6 @@ func warnExec(e execer, format ...string) {
 		if len(format) < 1 {
 			format = []string{"Exec err: %v"}
 		}
-		log.Printf(format[0], err)
 	}
 }
 
@@ -604,7 +577,6 @@ func (e *cmdExec) ExitOk() bool {
 }
 
 func makeCmd(w string, a ...string) *cmdExec {
-	log.Printf("makeCmd: %v %v\n", w, a)
 	cmd := exec.Command(w, a...)
 	if w == "msiexec" {
 		// see https://github.com/golang/go/issues/15566
