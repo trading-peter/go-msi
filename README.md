@@ -1,129 +1,48 @@
-<a href="https://app.codesponsor.io/link/aHBhB5M68Fescjjp9VC9TtJs/mh-cbon/go-msi" rel="nofollow"><img src="https://app.codesponsor.io/embed/aHBhB5M68Fescjjp9VC9TtJs/mh-cbon/go-msi.svg" style="width: 888px; height: 68px;" alt="Sponsor" /></a>
-
 # go-msi
 
-[![Appveyor Status](https://ci.appveyor.com/api/projects/status/github/mh-cbon/go-msi?branch=master&svg=true)](https://ci.appveyor.com/project/mh-cbon/go-msi)
+Forked from https://github.com/mh-cbon/go-msi
 
-Package go-msi helps to generate msi package for a Go project.
+[![Appveyor Status](https://ci.appveyor.com/api/projects/status/github/mat007/go-msi?branch=master&svg=true)](https://ci.appveyor.com/project/mat007/go-msi)
 
+go-msi leverages the [WiX Toolset](http://wixtoolset.org) to create a Windows MSI package from a JSON description of the product to install.
 
-This tool is part of the [go-github-release workflow](https://github.com/mh-cbon/go-github-release)
+A demo program can be seen [here](https://github.com/mat007/go-msi/tree/master/testing/hello).
 
-Find a demo program [here](https://github.com/mh-cbon/go-msi/tree/master/testing/hello)
+## Install
 
-# TOC
-- [Install](#install)
-  - [Go](#go)
-  - [Bintray](#bintray)
-  - [Chocolatey](#chocolatey)
-  - [linux rpm/deb repository](#linux-rpmdeb-repository)
-  - [linux rpm/deb standalone package](#linux-rpmdeb-standalone-package)
-- [Usage](#usage)
-  - [Requirements](#requirements)
-  - [Workflow](#workflow)
-  - [configuration file](#configuration-file)
-  - [License file](#license-file)
-- [Personnalization](#personnalization)
-  - [wix templates](#wix-templates)
-- [Cli](#cli)
-- [Recipes](#recipes)
-  - [Appveyor](#appveyor)
-  - [Unix like](#unix-like)
-  - [Release the project](#release-the-project)
-- [History](#history)
-- [Credits](#credits)
-
-# Install
-
-Check the [release page](https://github.com/mh-cbon/go-msi/releases)!
-
-#### Go
+Download from the [release page](https://github.com/mat007/go-msi/releases) or use `go get`:
 ```sh
-go get github.com/mh-cbon/go-msi
+go get github.com/mat007/go-msi
 ```
 
-#### Bintray
-```sh
-choco source add -n=mh-cbon -s="https://api.bintray.com/nuget/mh-cbon/choco"
-choco install go-msi
-```
-
-#### Chocolatey
-```sh
-choco install go-msi
-```
-
-#### linux rpm/deb repository
-```sh
-wget -O - https://raw.githubusercontent.com/mh-cbon/latest/master/bintray.sh \
-| GH=mh-cbon/go-msi sh -xe
-# or
-curl -L https://raw.githubusercontent.com/mh-cbon/latest/master/bintray.sh \
-| GH=mh-cbon/go-msi sh -xe
-```
-
-#### linux rpm/deb standalone package
-```sh
-curl -L https://raw.githubusercontent.com/mh-cbon/latest/master/install.sh \
-| GH=mh-cbon/go-msi sh -xe
-# or
-wget -q -O - --no-check-certificate \
-https://raw.githubusercontent.com/mh-cbon/latest/master/install.sh \
-| GH=mh-cbon/go-msi sh -xe
-```
-
-# Usage
+## Usage
 
 ### Requirements
 
-- A windows machine (see [here](https://github.com/mh-cbon/go-msi/blob/master/appveyor-recipe.md) for an appveyor file, see [here](https://github.com/mh-cbon/go-msi/blob/master/unice-recipe.md) for unix friendly users)
-- wix >= 3.10 (may work on older release, but it is untested, feel free to report)
-- you must add wix bin to your `PATH`
-- use `check-env` sub command to get a report.
+go-msi needs [WiX Toolset](http://wixtoolset.org/) 3.10 or later
 
 ### Workflow
 
-For simple cases,
-
-- Create a `wix.json` file like [this one](https://github.com/mh-cbon/go-msi/blob/master/wix.json)
-- Apply it guids with `go-msi set-guid`, you must do it once only for each app.
-- Run `go-msi make --msi your_program.msi --version 0.0.2`
+- Create a `wix.json` file like [this one](https://github.com/mat007/go-msi/blob/master/testing/hello/wix.json)
+- Leave the `upgrade-code` empty or remove it all together
+- Assign a fresh `upgrade-code` with `go-msi set-guid`, this must be done only once
+- Run `go-msi make --msi your_program.msi --version 0.0.1`
 
 ### configuration file
 
-`wix.json` file describe the desired packaging rules between your sources and the resulting msi file.
+The `wix.json` file describes the packaging rules for bundling the product files into the MSI package.
 
-[Check the demo json file](https://github.com/mh-cbon/go-msi/blob/master/testing/hello/wix.json)
-
-Post an issue if it is not self-explanatory.
-
-Always double check the documentation and [SO](https://stackoverflow.com)
-when you face a difficulty with `heat`, `candle`, `light`
-
-- http://wixtoolset.org/documentation/
-- http://stackoverflow.com/questions/tagged/wix
-
-If you wonder why `INSTALLDIR`, `[INSTALLDIR]`, this is part of wix rules, please check their documentation.
+Check the demo [wix.json](https://github.com/mat007/go-msi/blob/master/testing/hello/wix.json) file.
 
 ### License file
 
-Take care to the license file, it must be an `rtf` file, it must be encoded with `Windows1252` charset.
+The license file must be in RTF and encoded with the `Windows1252` charset.
 
-I have provided some tools to help with that matter.
+## Customization
 
-# Personnalization
+The WiX template files (in the [templates](templates) folder) can be modified to personnalize the behaviour of the MSI package.
 
-### wix templates
-
-For simplicity a default install flow is provided, which you can find [here](https://github.com/mh-cbon/go-msi/tree/master/templates)
-
-You can create a new one for your own personalization,
-you should only take care to reproduce the go templating already
-defined for `files`, `directories`, `environment variables`, `license` and `shortcuts`.
-
-I guess most of your changes will be about the `WixUI_HK.wxs` file.
-
-# Cli
+## Command line
 
 ###### $ go-msi -h
 ```
@@ -214,7 +133,7 @@ USAGE:
 
 OPTIONS:
    --path value, -p value     Path to the wix manifest file (default: "wix.json")
-   --src value, -s value      Directory path to the wix templates files (default: "/home/mh-cbon/gow/bin/templates")
+   --src value, -s value      Directory path to the wix templates files (default: "/home/mat007/gow/bin/templates")
    --out value, -o value      Directory path to the generated wix cmd file (default: "/tmp/go-msi645264968")
    --arch value, -a value     A target architecture, amd64 or 386 (ia64 is not handled)
    --msi value, -m value      Path to write resulting msi file to
@@ -233,7 +152,7 @@ USAGE:
 
 OPTIONS:
    --path value, -p value           Path to the wix manifest file (default: "wix.json")
-   --src value, -s value            Directory path to the wix templates files (default: "/home/mh-cbon/gow/bin/templates/choco")
+   --src value, -s value            Directory path to the wix templates files (default: "/home/mat007/gow/bin/templates/choco")
    --version value                  The version of your program
    --out value, -o value            Directory path to the generated chocolatey build file (default: "/tmp/go-msi697894350")
    --input value, -i value          Path to the msi file to package into the chocolatey package
@@ -251,7 +170,7 @@ USAGE:
 
 OPTIONS:
    --path value, -p value     Path to the wix manifest file (default: "wix.json")
-   --src value, -s value      Directory path to the wix templates files (default: "/home/mh-cbon/gow/bin/templates")
+   --src value, -s value      Directory path to the wix templates files (default: "/home/mat007/gow/bin/templates")
    --out value, -o value      Directory path to the generated wix templates files (default: "/tmp/go-msi522345138")
    --version value            The version of your program
    --license value, -l value  Path to the license file
@@ -294,7 +213,7 @@ USAGE:
 
 OPTIONS:
    --path value, -p value  Path to the wix manifest file (default: "wix.json")
-   --src value, -s value   Directory path to the wix templates files (default: "/home/mh-cbon/gow/bin/templates")
+   --src value, -s value   Directory path to the wix templates files (default: "/home/mat007/gow/bin/templates")
    --out value, -o value   Directory path to the generated wix cmd file (default: "/tmp/go-msi844736928")
    --arch value, -a value  A target architecture, amd64 or 386 (ia64 is not handled)
    --msi value, -m value   Path to write resulting msi file to
@@ -312,31 +231,10 @@ OPTIONS:
    --out value, -o value  Directory path to the generated wix cmd file (default: "/tmp/go-msi773158361")
 ```
 
-# Recipes
-
-### Appveyor
-
-Please check [this](https://github.com/mh-cbon/go-msi/blob/master/appveyor-recipe.md)
-
-### Unix like
-
-Please check [this](https://github.com/mh-cbon/go-msi/blob/master/unice-recipe.md)
-
-### Release the project
-
-```sh
-gump patch -d # check
-gump patch # bump
-```
-
 # History
 
 [CHANGELOG](CHANGELOG.md)
 
 # Credits
 
-A big big thanks to
-
-- `Helge Klein`, which i do not know personally, but made this project possible by sharing a real world example at
-https://helgeklein.com/blog/2014/09/real-world-example-wix-msi-application-installer/
-- all SO contributors on `wix` tag.
+Thanks to `mh-cbon` for providing https://github.com/mh-cbon/go-msi from which this project has been forked.

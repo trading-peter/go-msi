@@ -2,4 +2,4 @@
 
 A demo program for end-to-end testing.
 
-Find the test suite method [here](https://github.com/mh-cbon/go-msi/tree/master/testing)
+For instructions on how to run the tests see [here](../README.md).
