@@ -5,7 +5,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -137,7 +136,6 @@ func main() {
 
 	chocoUninstall := makeCmd("choco", "uninstall", "hello", "-v", "-d", "-y", "--force")
 	mustExec(chocoUninstall, "hello choco package uninstall failed %v")
-	readFile(`C:\ProgramData\chocolatey\logs\chocolatey.log`)
 
 	mustNotBeInstalled()
 
@@ -188,6 +186,8 @@ func mustBeInstalled(version string, shortcut, envvar bool) {
 	} else {
 		mustNotExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon")
 	}
+	mustEqual(strings.TrimSpace(readFile("C:/Program Files/hello/install-hook.txt")), "install hook")
+	mustEqual(strings.TrimSpace(readFile("C:/Program Files/hello/install-hook-with-passing-condition.txt")), "install hook with passing condition")
 
 	mgr, svc := mustHaveWindowsService(service)
 	defer mgr.Disconnect()
@@ -315,6 +315,12 @@ func mustContain(s, substr string) {
 		log.Fatalf("Failed to find %q", substr)
 	}
 }
+func mustEqual(actual, expected string) {
+	if expected != actual {
+		log.Fatalf("expected %s differs from actual %s", expected, actual)
+	}
+}
+
 func getEnv(env string) string {
 	value := getEnvFrom(env, "User")
 	if env == "path" || value == "" {
@@ -611,13 +617,10 @@ func makeCmd(w string, a ...string) *cmdExec {
 	return &cmdExec{Cmd: cmd, stdout: &stdout, stderr: &stderr}
 }
 
-func readFile(s string) {
-	fd, err := os.Open(s)
-	mustSucceed(err, fmt.Sprintf("readfile failed %q, err=%%v", s))
-	defer fd.Close()
-	if fd != nil {
-		io.Copy(fd, os.Stdout)
-	}
+func readFile(filename string) string {
+	b, err := ioutil.ReadFile(filename)
+	mustSucceed(err, fmt.Sprintf("readfile failed %q, err=%%v", filename))
+	return string(b)
 }
 
 func rmFile(s string) error {
