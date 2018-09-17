@@ -123,7 +123,7 @@ func main() {
 	chocoPkg := makeCmd("C:/go-msi/go-msi.exe", "choco",
 		"--input", msi,
 		"--version", version,
-		"-c", `"C:\Program Files\changelog\changelog.exe" ghrelease --version `+version,
+		"-c", "changelog ghrelease --version "+version,
 		"--keep",
 	)
 	mustExec(chocoPkg, "hello choco package make failed %v")
@@ -334,7 +334,7 @@ func getEnvFrom(env, hive string) string {
 	if err != nil {
 		log.Fatalf("getEnvFrom failed: %s", err)
 	}
-	return strings.TrimSpace(cmd.Stdout())
+	return strings.Replace(strings.TrimSpace(cmd.Stdout()), "c:", "C:", -1)
 }
 func mustShowReg(key, value string) {
 	cmd := makeCmd("reg", "query", key, "/v", value)
@@ -369,7 +369,7 @@ func mustEnvNotContain(env string, expect string, format ...string) {
 func mustRegEq(key, value, expected string) {
 	cmd := makeCmd("reg", "query", key, "/v", value)
 	mustExec(cmd, "registry query command failed %v")
-	mustContain(cmd.Stdout(), expected)
+	mustContain(strings.Replace(cmd.Stdout(), "c:", "C:", -1), expected)
 }
 func mustNoReg(key string) {
 	cmd := makeCmd("reg", "query", key)
