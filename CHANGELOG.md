@@ -1,5 +1,48 @@
 # Changelog - go-msi
 
+### 2.0.0
+
+__Changes__
+
+- Handle directories with a relative path
+- Add a new command to add/update the list of files in a wix manifest
+- Fix tool exit code
+- Make all GUID uppercase
+- Add Dockerfile for testing
+- Add support for conditions
+- Add support for (registry search) properties
+- Add registry keys support
+- Do not reject non semver version
+- Add properties set from the command line
+- Separate registry entries in different components
+- Add support for Return in hooks
+- Create one component per file
+- Add service
+- Make banner and dialog customizable
+- Fix back button from install dir dialog with no license
+- Fix back button from ready dialog not working
+- Make add/remove icon in settings customizable
+- Make uninstall info customizable
+- Do not try and convert license to RTF when source file does not exist
+- Use product name and version in msi file property fields
+- Add bin flag to set the location of the wix binaries
+- Replace github.com/satori/go.uuid with github.com/gofrs/uuid
+- Use automatic GUIDs where possible
+- Use a component per shortcut
+- Make display version in add/remove program list customizable
+- Always use custom ARP
+- Check version fields values are below the maximum allowed by MSI
+- Support always increasing build/revision number as version
+- Remove unneeded VersionMajor and VersionMinor
+- Simplify upgrade checks using WiX 3.5+ new construct
+- Link shortcuts to properties with conditions
+- Put start menu shortcuts in a company named folder instead of product
+- Support setting the compression level
+- Move environments into separate components
+- Add condition to environments
+- Add conditions in hooks
+- Separate main into its own package 
+-
 ### 1.0.2
 
 __Changes__

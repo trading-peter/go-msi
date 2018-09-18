@@ -17,7 +17,7 @@ install:
   - set GH_APP=%APPVEYOR_PROJECT_NAME%
   - set GH_USER=%APPVEYOR_ACCOUNT_NAME%
   - set VERSION=%APPVEYOR_REPO_TAG_NAME%
-  - if "%x%"=="%VERSION%" set VERSION=1.0.2
+  - if "%x%"=="%VERSION%" set VERSION=2.0.0
   - set PATH=%WIX%\bin;%PATH%
   - set PATH=%GOPATH%\bin;%PATH%
   - go get -u github.com/mh-cbon/never-fail
@@ -28,7 +28,7 @@ before_test:
   # do a manual installation of go-msi from pulled source code
   - mkdir C:\go-msi\
   - set GOARCH=amd64
-  - go build -o C:\go-msi\go-msi.exe --ldflags "-X main.VERSION=%VERSION%" main.go
+  - go build -o C:\go-msi\go-msi.exe --ldflags "-X main.Version=%VERSION%" main.go
   - XCOPY /I /E templates C:\go-msi\templates
   # prepare tests packages
   - cd testing\hello
@@ -42,10 +42,10 @@ before_test:
 build_script:
   # x386
   - set GOARCH=386
-  - go build -o %GH_APP%-%GOARCH%.exe --ldflags "-X main.VERSION=%VERSION%" main.go
+  - go build -o %GH_APP%-%GOARCH%.exe --ldflags "-X main.Version=%VERSION%" main.go
   # amd64
   - set GOARCH=amd64
-  - go build -o %GH_APP%-%GOARCH%.exe --ldflags "-X main.VERSION=%VERSION%" main.go
+  - go build -o %GH_APP%-%GOARCH%.exe --ldflags "-X main.Version=%VERSION%" main.go
 
 deploy_script:
   # next section is a workaround for https://github.com/appveyor/ci/issues/1752

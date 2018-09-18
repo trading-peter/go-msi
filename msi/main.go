@@ -19,8 +19,8 @@ import (
 	"github.com/urfave/cli"
 )
 
-// VERSION holds the program version.
-var VERSION = "0.0.0"
+// Version holds the program version.
+var Version = "0.0.0"
 
 // TPLPATH points to the template directory on the target system.
 // Should be used only for non windows systems to indicate template locations.
@@ -43,7 +43,7 @@ func Main() {
 
 	app := cli.NewApp()
 	app.Name = "go-msi"
-	app.Version = VERSION
+	app.Version = Version
 	app.Usage = "Easy msi pakage for Go"
 	app.UsageText = "go-msi <cmd> <options>"
 	app.Commands = []cli.Command{
