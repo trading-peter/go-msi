@@ -1,4 +1,4 @@
-package tpls
+package templates
 
 import (
 	"bytes"
