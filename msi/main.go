@@ -12,7 +12,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/mat007/go-msi/manifest"
 	"github.com/mat007/go-msi/rtf"
-	"github.com/mat007/go-msi/tpls"
+	"github.com/mat007/go-msi/templates"
 	"github.com/mat007/go-msi/util"
 	"github.com/mat007/go-msi/wix"
 	"github.com/mh-cbon/stringexec"
@@ -572,11 +572,11 @@ func generateTemplates(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	templates, err := tpls.Find(src, "*.wxs")
+	tpls, err := templates.Find(src, "*.wxs")
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
-	if len(templates) == 0 {
+	if len(tpls) == 0 {
 		return cli.NewExitError("No templates *.wxs found in this directory", 1)
 	}
 
@@ -585,16 +585,16 @@ func generateTemplates(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	for _, tpl := range templates {
+	for _, tpl := range tpls {
 		dst := filepath.Join(out, filepath.Base(tpl))
-		err = tpls.GenerateTemplate(&wixFile, tpl, dst)
+		err = templates.GenerateTemplate(&wixFile, tpl, dst)
 		if err != nil {
 			return cli.NewExitError(err.Error(), 1)
 		}
 	}
 
-	fmt.Printf("Generated %d templates\n", len(templates))
-	for _, tpl := range templates {
+	fmt.Printf("Generated %d templates\n", len(tpls))
+	for _, tpl := range tpls {
 		dst := filepath.Join(out, filepath.Base(tpl))
 		fmt.Printf("- %s\n", dst)
 	}
@@ -660,7 +660,7 @@ func generateWixCommands(c *cli.Context) error {
 		return cli.NewExitError("--msi parameter must be set", 1)
 	}
 
-	templates, err := tpls.Find(src, "*.wxs")
+	templates, err := templates.Find(src, "*.wxs")
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
@@ -803,18 +803,18 @@ func quickMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	templates, err := tpls.Find(src, "*.wxs")
+	tpls, err := templates.Find(src, "*.wxs")
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
-	if len(templates) == 0 {
+	if len(tpls) == 0 {
 		return cli.NewExitError("No templates *.wxs found in this directory", 1)
 	}
 
-	builtTemplates := make([]string, len(templates))
-	for i, tpl := range templates {
+	builtTemplates := make([]string, len(tpls))
+	for i, tpl := range tpls {
 		dst := filepath.Join(out, filepath.Base(tpl))
-		err = tpls.GenerateTemplate(&wixFile, tpl, dst)
+		err = templates.GenerateTemplate(&wixFile, tpl, dst)
 		builtTemplates[i] = dst
 		if err != nil {
 			return cli.NewExitError(err.Error(), 1)
@@ -911,11 +911,11 @@ func chocoMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	templates, err := tpls.Find(src, "*")
+	tpls, err := templates.Find(src, "*")
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
-	if len(templates) == 0 {
+	if len(tpls) == 0 {
 		return cli.NewExitError("No templates found in this directory", 1)
 	}
 
@@ -954,9 +954,9 @@ func chocoMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	for _, tpl := range templates {
+	for _, tpl := range tpls {
 		dst := filepath.Join(out, filepath.Base(tpl))
-		err := tpls.GenerateTemplate(&wixFile, tpl, dst)
+		err := templates.GenerateTemplate(&wixFile, tpl, dst)
 		if err != nil {
 			return cli.NewExitError(err.Error(), 1)
 		}
