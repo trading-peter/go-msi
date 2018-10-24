@@ -72,12 +72,14 @@ type File struct {
 
 // Service is the struct to decode a service.
 type Service struct {
-	Name        string `json:"name"`
-	Bin         string `json:"-"`
-	Start       string `json:"start"`
-	DisplayName string `json:"display-name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Arguments   string `json:"arguments,omitempty"`
+	Name         string   `json:"name"`
+	Bin          string   `json:"-"`
+	Start        string   `json:"start"`
+	Delayed      bool     `json:"-"`
+	DisplayName  string   `json:"display-name,omitempty"`
+	Description  string   `json:"description,omitempty"`
+	Arguments    string   `json:"arguments,omitempty"`
+	Dependencies []string `json:"dependencies,omitempty"`
 }
 
 // ChocoSpec is the struct to decode the choco key of a wix.json file.
@@ -414,6 +416,10 @@ func (wixFile *WixManifest) Normalize() error {
 	for i, file := range wixFile.Files {
 		if file.Service != nil {
 			wixFile.Files[i].Service.Bin = filepath.Base(file.Path)
+			if file.Service.Start == "delayed" {
+				file.Service.Start = "auto"
+				file.Service.Delayed = true
+			}
 		}
 	}
 

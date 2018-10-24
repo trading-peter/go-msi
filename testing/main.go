@@ -191,7 +191,7 @@ func mustBeInstalled(version string, shortcut, envvar bool) {
 
 	mgr, svc := mustHaveWindowsService(service)
 	defer mgr.Disconnect()
-	mustHaveStartedWindowsService(service, svc)
+	mustHaveStartedWindowsService(service, version, svc)
 	mustSucceed(svc.Close(), "Failed to close the service %v")
 
 	mustQueryHello(url, version)
@@ -237,12 +237,48 @@ func mustNotHaveWindowsService(n string) {
 	}
 }
 
-func mustHaveStartedWindowsService(n string, s *mgr.Service) {
+func mustHaveStartedWindowsService(n, version string, s *mgr.Service) {
 	status, err := s.Query()
 	mustSucceed(err, "Failed to query the service status %v")
 	if status.State != svc.Running {
 		mustSucceed(fmt.Errorf("Service not started %v", n))
 	}
+	sc := makeCmd("sc", "qc", service)
+	mustExec(sc, "sc failed %v")
+	expected := `[SC] QueryServiceConfig SUCCESS
+
+SERVICE_NAME: HelloSvc
+        TYPE               : 10  WIN32_OWN_PROCESS 
+        START_TYPE         : 2   AUTO_START  (DELAYED)
+        ERROR_CONTROL      : 1   NORMAL
+        BINARY_PATH_NAME   : "C:\Program Files\hello\hello.exe" ` + version + `
+        LOAD_ORDER_GROUP   : 
+        TAG                : 0
+        DISPLAY_NAME       : Hello!
+        DEPENDENCIES       : SENS
+                           : ProfSvc
+        SERVICE_START_NAME : LocalSystem
+`
+	mustEqualLines(sc.Stdout(), expected)
+}
+
+func mustEqualLines(actual, expected string) {
+	actualLines := strings.Split(actual, "\n")
+	expectedLines := strings.Split(expected, "\n")
+	if len(actualLines) != len(expectedLines) {
+		log.Fatalf("expected %s differs from actual %s", expected, actual)
+	}
+	for i, a := range actualLines {
+		a = trimPath(a)
+		b := trimPath(expectedLines[i])
+		if a != b {
+			log.Fatalf("expected %q differs from actual %q", b, a)
+		}
+	}
+}
+
+func trimPath(path string) string {
+	return strings.TrimSpace(strings.Replace(path, "c:", "C:", -1))
 }
 
 func mustStopWindowsService(n string, s *mgr.Service) {
@@ -315,7 +351,7 @@ func getEnvFrom(env, hive string) string {
 	if err != nil {
 		log.Fatalf("getEnvFrom failed: %s", err)
 	}
-	return strings.Replace(strings.TrimSpace(cmd.Stdout()), "c:", "C:", -1)
+	return trimPath(cmd.Stdout())
 }
 func mustShowReg(key, value string) {
 	cmd := makeCmd("reg", "query", key, "/v", value)
@@ -345,7 +381,7 @@ func mustEnvNotContain(env string, expect string, format ...string) {
 func mustRegEq(key, value, expected string) {
 	cmd := makeCmd("reg", "query", key, "/v", value)
 	mustExec(cmd, "registry query command failed %v")
-	mustContain(strings.Replace(cmd.Stdout(), "c:", "C:", -1), expected)
+	mustContain(trimPath(cmd.Stdout()), expected)
 }
 func mustNoReg(key string) {
 	cmd := makeCmd("reg", "query", key)

@@ -4,6 +4,8 @@
 
 __Changes__
 
+- Add service delayed start support
+- Add service dependencies support
 - Handle directories with a relative path
 - Add a new command to add/update the list of files in a wix manifest
 - Fix tool exit code
@@ -42,7 +44,7 @@ __Changes__
 - Add condition to environments
 - Add conditions in hooks
 - Separate main into its own package 
--
+
 ### 1.0.2
 
 __Changes__

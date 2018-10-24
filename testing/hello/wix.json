@@ -18,10 +18,14 @@
       "path": "build/amd64/hello.exe",
       "service": {
         "name": "HelloSvc",
-        "start": "auto",
+        "start": "delayed",
         "display-name": "Hello!",
         "description": "The hello service",
-        "arguments": "[ProductVersion]"
+        "arguments": "[ProductVersion]",
+        "dependencies": [
+          "SENS",
+          "ProfSvc"
+        ]
       }
     }
   ],
