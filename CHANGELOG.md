@@ -4,6 +4,7 @@
 
 __Changes__
 
+- Add support for shortcut properties
 - Add service delayed start support
 - Add service dependencies support
 - Handle directories with a relative path
