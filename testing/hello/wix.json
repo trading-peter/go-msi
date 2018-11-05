@@ -81,7 +81,13 @@
       "target": "[INSTALLDIR]hello.exe",
       "wdir": "INSTALLDIR",
       "icon": "ico.ico",
-      "condition": "STARTMENUSHORTCUT ~= \"yes\""
+      "condition": "STARTMENUSHORTCUT ~= \"yes\"",
+      "properties": [
+        {
+          "key": "some property",
+          "value": "some value"
+        }
+      ]
     }
   ],
   "choco": {
