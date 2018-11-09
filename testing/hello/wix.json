@@ -150,12 +150,19 @@
     {
       "id": "ENVVAR",
       "value": "yes"
+    },
+    {
+      "id": "EMPTY"
     }
   ],
   "conditions": [
     {
       "condition": "Installed OR (CURRENTBUILD \u003c MINIMUMBUILD)",
       "message": "some condition message"
+    },
+    {
+      "condition": "NOT EMPTY",
+      "message": "not empty"
     }
   ]
 }
