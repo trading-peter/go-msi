@@ -17,29 +17,27 @@ import (
 
 // WixManifest is the struct to decode a wix.json file.
 type WixManifest struct {
-	Compression    string         `json:"compression,omitempty"`
-	Product        string         `json:"product"`
-	Company        string         `json:"company"`
-	Version        Version        `json:"-"`
-	License        string         `json:"license,omitempty"`
-	Banner         string         `json:"banner,omitempty"`
-	Dialog         string         `json:"dialog,omitempty"`
-	Icon           string         `json:"icon,omitempty"`
-	Info           *Info          `json:"info,omitempty"`
-	UpgradeCode    string         `json:"upgrade-code"`
-	Files          []File         `json:"files,omitempty"`
-	Directories    []string       `json:"directories,omitempty"`
-	DirNames       []string       `json:"-"`
-	RelDirs        []string       `json:"-"`
-	Environments   []Environment  `json:"environments,omitempty"`
-	Registries     []RegistryItem `json:"registries,omitempty"`
-	Shortcuts      []Shortcut     `json:"shortcuts,omitempty"`
-	Choco          ChocoSpec      `json:"choco"`
-	Hooks          []Hook         `json:"hooks,omitempty"`
-	InstallHooks   []Hook         `json:"-"`
-	UninstallHooks []Hook         `json:"-"`
-	Properties     []Property     `json:"properties,omitempty"`
-	Conditions     []Condition    `json:"conditions,omitempty"`
+	Compression  string         `json:"compression,omitempty"`
+	Product      string         `json:"product"`
+	Company      string         `json:"company"`
+	Version      Version        `json:"-"`
+	License      string         `json:"license,omitempty"`
+	Banner       string         `json:"banner,omitempty"`
+	Dialog       string         `json:"dialog,omitempty"`
+	Icon         string         `json:"icon,omitempty"`
+	Info         *Info          `json:"info,omitempty"`
+	UpgradeCode  string         `json:"upgrade-code"`
+	Files        []File         `json:"files,omitempty"`
+	Directories  []string       `json:"directories,omitempty"`
+	DirNames     []string       `json:"-"`
+	RelDirs      []string       `json:"-"`
+	Environments []Environment  `json:"environments,omitempty"`
+	Registries   []RegistryItem `json:"registries,omitempty"`
+	Shortcuts    []Shortcut     `json:"shortcuts,omitempty"`
+	Choco        ChocoSpec      `json:"choco"`
+	Hooks        []Hook         `json:"hooks,omitempty"`
+	Properties   []Property     `json:"properties,omitempty"`
+	Conditions   []Condition    `json:"conditions,omitempty"`
 }
 
 // Version stores version related data in various formats.
@@ -100,17 +98,6 @@ type ChocoSpec struct {
 	ChangeLog      string `json:"-"`
 }
 
-const (
-	whenInstall   = "install"
-	whenUninstall = "uninstall"
-)
-
-// HookPhases describes known hook phases.
-var HookPhases = map[string]bool{
-	whenInstall:   true,
-	whenUninstall: true,
-}
-
 // Hook describes a command to run on install / uninstall.
 type Hook struct {
 	Command       string `json:"command,omitempty"`
@@ -118,6 +105,8 @@ type Hook struct {
 	When          string `json:"when,omitempty"`
 	Return        string `json:"return,omitempty"`
 	Condition     string `json:"condition,omitempty"`
+	Impersonate   string `json:"impersonate,omitempty"`
+	Execute       string `json:"execute,omitempty"`
 }
 
 // Property describes a property to initialize.
@@ -372,28 +361,22 @@ func (wixFile *WixManifest) Normalize() error {
 	}
 	wixFile.Choco.Tags += " admin" // required to pass chocolatey validation..
 
-	// Escape hook commands and ensure the command name is enclosed in quotes (needed by wix)
 	for i, hook := range wixFile.Hooks {
-		cmd := strings.Trim(hook.Command, " ")
-		if len(cmd) > 0 && cmd[0] != '"' {
-			words := strings.Split(cmd, " ")
-			cmd = `"` + words[0] + `"` + cmd[len(words[0]):]
-		}
-		buf := &bytes.Buffer{}
-		if err := xml.EscapeText(buf, []byte(cmd)); err != nil {
+		command, err := escapeHook(hook.Command)
+		if err != nil {
 			return err
 		}
-		wixFile.Hooks[i].CookedCommand = buf.String()
-	}
-
-	// Separate install and uninstall hooks to simplify templating
-	for _, hook := range wixFile.Hooks {
-		switch hook.When {
-		case whenInstall:
-			wixFile.InstallHooks = append(wixFile.InstallHooks, hook)
-		case whenUninstall:
-			wixFile.UninstallHooks = append(wixFile.UninstallHooks, hook)
+		if hook.Execute == "" {
+			hook.Execute = "deferred"
 		}
+		if hook.Impersonate == "" {
+			hook.Impersonate = "no"
+			if hook.Execute == "immediate" {
+				hook.Impersonate = "yes"
+			}
+		}
+		hook.CookedCommand = command
+		wixFile.Hooks[i] = hook
 	}
 
 	var err error
@@ -451,6 +434,19 @@ func (wixFile *WixManifest) Normalize() error {
 	wixFile.Info.Size = size >> 10
 
 	return nil
+}
+
+func escapeHook(command string) (string, error) {
+	cmd := strings.Trim(command, " ")
+	if len(cmd) > 0 && cmd[0] != '"' {
+		words := strings.Split(cmd, " ")
+		cmd = `"` + words[0] + `"` + cmd[len(words[0]):]
+	}
+	buf := &bytes.Buffer{}
+	if err := xml.EscapeText(buf, []byte(cmd)); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 func extractRegistry(path string) (string, string, error) {

@@ -106,6 +106,15 @@
       "when": "uninstall"
     },
     {
+      "command": "cmd /c if exist \"[INSTALLDIR]uninstall-immediate-hook.txt\" (del \"[INSTALLDIR]uninstall-immediate-hook.txt\") else exit /b 1",
+      "when": "uninstall"
+    },
+    {
+      "command": "cmd /c @echo uninstall immediate hook\u003e\"[INSTALLDIR]uninstall-immediate-hook.txt\"",
+      "when": "uninstall",
+      "execute": "immediate"
+    },
+    {
       "command": "cmd /c @echo install hook with passing condition\u003e\"[INSTALLDIR]install-hook-with-passing-condition.txt\"",
       "when": "install",
       "condition": "1 \u003e 0"
@@ -121,7 +130,7 @@
       "condition": "0 \u003e 1"
     },
     {
-      "command": "install hook with failing condition should not be run",
+      "command": "uninstall hook with failing condition should not be run",
       "when": "uninstall",
       "condition": "0 \u003e 1"
     },
