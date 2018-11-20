@@ -150,10 +150,10 @@
       {{end}}
       <InstallExecuteSequence>
          {{range $i, $e := .InstallHooks}}
-         <Custom Action="CustomInstallExec{{$i}}" After="{{if eq $i 0}}InstallFiles{{else}}CustomInstallExec{{dec $i}}{{end}}"><![CDATA[NOT Installed AND NOT REMOVE{{if gt ($e.Condition | len) 0}} AND ({{$e.Condition}}){{end}}]]></Custom>
+         <Custom Action="CustomInstallExec{{$i}}" After="InstallFiles"><![CDATA[NOT Installed AND NOT REMOVE{{if gt ($e.Condition | len) 0}} AND ({{$e.Condition}}){{end}}]]></Custom>
          {{end}}
          {{range $i, $e := .UninstallHooks}}
-         <Custom Action="CustomUninstallExec{{$i}}" After="{{if eq $i 0}}InstallInitialize{{else}}CustomUninstallExec{{dec $i}}{{end}}"><![CDATA[REMOVE ~= "ALL"{{if gt ($e.Condition | len) 0}} AND ({{$e.Condition}}){{end}}]]></Custom>
+         <Custom Action="CustomUninstallExec{{$i}}" After="InstallInitialize"><![CDATA[REMOVE ~= "ALL"{{if gt ($e.Condition | len) 0}} AND ({{$e.Condition}}){{end}}]]></Custom>
          {{end}}
       </InstallExecuteSequence>
 
