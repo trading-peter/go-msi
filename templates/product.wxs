@@ -157,7 +157,7 @@
       </InstallExecuteSequence>
 
       <Feature Id="DefaultFeature" Level="1">
-         {{range $i, $h := .Environments}}
+         {{range $i, $e := .Environments}}
          <ComponentRef Id="Environments{{$i}}"/>
          {{end}}
          {{range $i, $e := .Files}}
