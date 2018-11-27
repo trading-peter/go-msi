@@ -4,6 +4,7 @@
 
 __Changes__
 
+- Run impersonated immediate uninstall hooks before install validation
 - Add support for shortcut properties
 - Add service delayed start support
 - Add service dependencies support

@@ -140,25 +140,24 @@
 
       </Directory>
 
-      {{range $i, $e := .InstallHooks}}
-      <SetProperty Id="CustomInstallExec{{$i}}" Value="{{$e.CookedCommand}}" Before="CustomInstallExec{{$i}}" Sequence="execute"/>
-      <CustomAction Id="CustomInstallExec{{$i}}" BinaryKey="WixCA" DllEntry="WixQuietExec" Execute="deferred" {{if gt ($e.Return | len) 0}} Return="{{$e.Return}}" {{end}} Impersonate="no"/>
-      {{end}}
-      {{range $i, $e := .UninstallHooks}}
-      <SetProperty Id="CustomUninstallExec{{$i}}" Value="{{$e.CookedCommand}}" Before="CustomUninstallExec{{$i}}" Sequence="execute"/>
-      <CustomAction Id="CustomUninstallExec{{$i}}" BinaryKey="WixCA" DllEntry="WixQuietExec" Execute="deferred" {{if gt ($e.Return | len) 0}} Return="{{$e.Return}}" {{end}} Impersonate="no"/>
+      {{range $i, $h := .Hooks}}
+      <SetProperty Action="SetCustomExec{{$i}}" {{if eq $h.Execute "immediate"}} Id="WixQuietExecCmdLine" {{else}} Id="CustomExec{{$i}}" {{end}} Value="{{$h.CookedCommand}}" Before="CustomExec{{$i}}" Sequence="execute"/>
+      <CustomAction Id="CustomExec{{$i}}" BinaryKey="WixCA" DllEntry="WixQuietExec" Execute="{{$h.Execute}}" Impersonate="{{$h.Impersonate}}" {{if gt ($h.Return | len) 0}} Return="{{$h.Return}}" {{end}}/>
       {{end}}
       <InstallExecuteSequence>
-         {{range $i, $e := .InstallHooks}}
-         <Custom Action="CustomInstallExec{{$i}}" After="{{if eq $i 0}}InstallFiles{{else}}CustomInstallExec{{dec $i}}{{end}}"><![CDATA[NOT Installed AND NOT REMOVE{{if gt ($e.Condition | len) 0}} AND ({{$e.Condition}}){{end}}]]></Custom>
-         {{end}}
-         {{range $i, $e := .UninstallHooks}}
-         <Custom Action="CustomUninstallExec{{$i}}" After="{{if eq $i 0}}InstallInitialize{{else}}CustomUninstallExec{{dec $i}}{{end}}"><![CDATA[REMOVE ~= "ALL"{{if gt ($e.Condition | len) 0}} AND ({{$e.Condition}}){{end}}]]></Custom>
+         {{range $i, $h := .Hooks}}
+         <Custom Action="CustomExec{{$i}}" {{if eq $h.When "install"}} After="InstallFiles" {{else if eq $h.Execute "immediate"}} Before="InstallValidate" {{else}} After="InstallInitialize" {{end}}>
+            {{if eq $h.When "install"}}
+            <![CDATA[NOT Installed AND NOT REMOVE{{if gt ($h.Condition | len) 0}} AND ({{$h.Condition}}){{end}}]]>
+            {{else}}
+            <![CDATA[REMOVE{{if gt ($h.Condition | len) 0}} AND ({{$h.Condition}}){{end}}]]>
+            {{end}}
+         </Custom>
          {{end}}
       </InstallExecuteSequence>
 
       <Feature Id="DefaultFeature" Level="1">
-         {{range $i, $e := .Environments}}
+         {{range $i, $h := .Environments}}
          <ComponentRef Id="Environments{{$i}}"/>
          {{end}}
          {{range $i, $e := .Files}}

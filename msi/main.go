@@ -386,8 +386,15 @@ func checkJSON(c *cli.Context) error {
 	}
 
 	for _, hook := range wixFile.Hooks {
-		if _, ok := manifest.HookPhases[hook.When]; !ok {
+		switch hook.When {
+		case "install", "uninstall":
+		default:
 			return cli.NewExitError(`Invalid "when" value in hook: `+hook.When, 1)
+		}
+		switch hook.Impersonate {
+		case "yes", "no":
+		default:
+			return cli.NewExitError(`Invalid "impersonate" value in hook: `+hook.Impersonate, 1)
 		}
 	}
 

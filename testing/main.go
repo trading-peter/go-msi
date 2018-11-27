@@ -154,7 +154,7 @@ func install(msi, version string, shortcut, envvar bool, properties ...string) {
 
 func uninstall(msi, version string) {
 	packageUninstall := makeCmd("msiexec", "/x", msi, "/q", "/l*v", "log-uninstall.txt")
-	mustExec(packageUninstall, "Package uninstall failed %v")
+	mustExec(packageUninstall, "Package uninstallation failed %v")
 	content := readLog("log-uninstall.txt")
 	mustContain(content, "Product: hello -- Removal completed successfully.")
 	mustContain(content, "Windows Installer removed the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
@@ -403,30 +403,10 @@ func mustLs(path string) map[string]os.FileInfo {
 	return ret
 }
 
-type starter interface {
-	Start() error
-}
-
-func mustStart(e starter, format ...string) {
-	if len(format) < 1 {
-		format = []string{"Start err: %v"}
-	}
-	mustSucceed(e.Start(), format[0])
-}
-
-type waiter interface {
-	Wait() error
-}
-
-func mustWait(e waiter, format ...string) {
-	if len(format) < 1 {
-		format = []string{"Wait err: %v"}
-	}
-	mustSucceed(e.Wait(), format[0])
-}
-
 type execer interface {
 	Exec() error
+	Stderr() string
+	Stdout() string
 }
 
 func mustExec(e execer, format ...string) {
@@ -434,25 +414,6 @@ func mustExec(e execer, format ...string) {
 		format = []string{"Exec err: %v"}
 	}
 	mustSucceedDetailed(e.Exec(), e, format[0])
-}
-
-func warnExec(e execer, format ...string) {
-	if err := e.Exec(); err != nil {
-		if len(format) < 1 {
-			format = []string{"Exec err: %v"}
-		}
-	}
-}
-
-type killer interface {
-	Kill() error
-}
-
-func mustKill(e killer, format ...string) {
-	if len(format) < 1 {
-		format = []string{"Kill err: %v"}
-	}
-	mustSucceed(e.Kill(), format[0])
 }
 
 type exister interface {
@@ -484,15 +445,7 @@ func isTrue(b bool, format ...string) error {
 	return fmt.Errorf(format[0], b)
 }
 
-type stderrer interface {
-	Stderr() string
-}
-
-type stdouter interface {
-	Stdout() string
-}
-
-func mustEqStdout(e stdouter, expected string, format ...string) {
+func mustEqStdout(e execer, expected string, format ...string) {
 	got := e.Stdout()
 	if len(format) < 1 {
 		format = []string{"mustEqStdout failed: output does not match, got=%q, want=%q: "}
@@ -518,14 +471,8 @@ func (f *httpRequest) String() string {
 func (f *httpRequest) Stdout() string {
 	return f.body
 }
-func (f *httpRequest) Header(name string) []string {
-	return f.headers[name]
-}
-func (f *httpRequest) RespondeCode() int {
-	return f.statusCode
-}
-func (f *httpRequest) ExitOk() bool {
-	return f.statusCode == 200
+func (f *httpRequest) Stderr() string {
+	return ""
 }
 func (f *httpRequest) Exec() error {
 	response, err := http.Get(f.url)
@@ -559,17 +506,6 @@ func (e *cmdExec) String() string {
 	return e.bin + " " + strings.Join(e.args, " ")
 }
 
-func (e *cmdExec) SetArgs(args []string) error {
-	if e.hasStarted {
-		return fmt.Errorf("Cannot set arguments on command already started")
-	}
-	if e.hasWaited {
-		return fmt.Errorf("Cannot set arguments on command already waited")
-	}
-	e.args = args
-	return nil
-}
-
 func (e *cmdExec) Start() error {
 	if !e.hasStarted {
 		e.startErr = e.Cmd.Start()
@@ -590,9 +526,6 @@ func (e *cmdExec) Exec() error {
 	}
 	return e.Wait()
 }
-func (e *cmdExec) Kill() error {
-	return e.Process.Kill()
-}
 func (e *cmdExec) Stdout() string {
 	if e.hasStarted == false {
 		log.Fatal("Process must have run")
@@ -604,12 +537,6 @@ func (e *cmdExec) Stderr() string {
 		log.Fatal("Process must have run")
 	}
 	return e.stderr.String()
-}
-func (e *cmdExec) ExitOk() bool {
-	if e.hasWaited == false {
-		log.Fatal("Process must have run")
-	}
-	return e.ProcessState.Exited() && e.ProcessState.Success()
 }
 
 func makeCmd(w string, a ...string) *cmdExec {
