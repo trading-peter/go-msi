@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -21,7 +22,6 @@ import (
 )
 
 func main() {
-
 	mustNotBeInstalled()
 
 	gopath := os.Getenv("GOPATH")
@@ -142,6 +142,14 @@ func main() {
 	fmt.Println("\nSuccess!")
 }
 
+var hookFile = filepath.Join(homedir(), "hook.txt")
+
+func homedir() string {
+	usr, err := user.Current()
+	mustSucceed(err)
+	return usr.HomeDir
+}
+
 func install(msi, version string, shortcut, envvar bool, properties ...string) {
 	packageInstall := makeCmd("msiexec", append([]string{"/i", msi, "/q", "/l*v", "log-install.txt"}, properties...)...)
 	mustExec(packageInstall, "Package installation failed %v")
@@ -150,6 +158,8 @@ func install(msi, version string, shortcut, envvar bool, properties ...string) {
 	mustContain(content, "Windows Installer installed the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
 	mustBeInstalled(version, shortcut, envvar)
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
+	mustEqual(strings.TrimSpace(readFile(hookFile)), "hook")
+	mustSucceed(rmFile(hookFile), "rmfile failed %v")
 }
 
 func uninstall(msi, version string) {
@@ -160,6 +170,8 @@ func uninstall(msi, version string) {
 	mustContain(content, "Windows Installer removed the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
 	mustNotBeInstalled()
 	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
+	mustEqual(strings.TrimSpace(readFile(hookFile)), "hook")
+	mustSucceed(rmFile(hookFile), "rmfile failed %v")
 }
 
 const (

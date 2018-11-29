@@ -387,7 +387,7 @@ func checkJSON(c *cli.Context) error {
 
 	for _, hook := range wixFile.Hooks {
 		switch hook.When {
-		case "install", "uninstall":
+		case "install", "uninstall", "":
 		default:
 			return cli.NewExitError(`Invalid "when" value in hook: `+hook.When, 1)
 		}
