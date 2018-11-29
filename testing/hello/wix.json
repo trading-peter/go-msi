@@ -98,6 +98,9 @@
   },
   "hooks": [
     {
+      "command": "cmd /c @echo hook\u003e\"%USERPROFILE%\\hook.txt\""
+    },
+    {
       "command": "cmd /c @echo install hook\u003e\"[INSTALLDIR]install-hook.txt\"",
       "when": "install"
     },

@@ -149,8 +149,10 @@
          <Custom Action="CustomExec{{$i}}" {{if eq $h.When "install"}} After="InstallFiles" {{else if eq $h.Execute "immediate"}} Before="InstallValidate" {{else}} After="InstallInitialize" {{end}}>
             {{if eq $h.When "install"}}
             <![CDATA[NOT Installed AND NOT REMOVE{{if gt ($h.Condition | len) 0}} AND ({{$h.Condition}}){{end}}]]>
-            {{else}}
+            {{else if eq $h.When "uninstall"}}
             <![CDATA[REMOVE{{if gt ($h.Condition | len) 0}} AND ({{$h.Condition}}){{end}}]]>
+            {{else if gt ($h.Condition | len) 0 }}
+            <![CDATA[{{$h.Condition}}]]>
             {{end}}
          </Custom>
          {{end}}
