@@ -18,7 +18,7 @@ func GenerateCmd(wixFile *manifest.WixManifest, templates []string, msiOutFile, 
 	for i, dir := range wixFile.RelDirs {
 		sI := strconv.Itoa(i)
 		cmd += filepath.Join(path, "heat") + " dir " + dir + " -nologo -cg AppFiles" + sI
-		cmd += " -ag -gg -g1 -srd -sfrag -template fragment -dr APPDIR" + sI
+		cmd += " -ag -gg -g1 -srd -sfrag -sw5150 -template fragment -dr APPDIR" + sI
 		cmd += " -var var.SourceDir" + sI
 		cmd += " -out AppFiles" + sI + ".wxs"
 		cmd += eol
