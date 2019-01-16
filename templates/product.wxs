@@ -77,7 +77,7 @@
         {{range $i, $e := .Environments}}
         <Component Id="Environments{{$i}}" Guid="*">
             <Environment Id="Environment{{$i}}" Name="{{$e.Name}}" Value="{{$e.Value}}" Permanent="{{$e.Permanent}}" Part="{{$e.Part}}" Action="{{$e.Action}}" System="{{$e.System}}"/>
-            <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="envvar{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
+            <RegistryValue Root="HKLM" Key="Software\[Manufacturer]\[ProductName]" Name="envvar{{$i}}" Type="integer" Value="1" KeyPath="yes"/>
             {{if gt ($e.Condition | len) 0}}<Condition><![CDATA[{{$e.Condition}}]]></Condition>{{end}}
         </Component>
         {{end}}
