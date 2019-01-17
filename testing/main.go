@@ -194,9 +194,9 @@ func mustBeInstalled(version string, shortcut, envvar bool) {
 	mustExist("C:/Program Files/hello", "Files missing %v")
 	mustExist("C:/Program Files/hello/assets", "Directory missing %v")
 	if shortcut {
-		mustExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon/hello.lnk", "Shortcut link is missing %v")
+		mustExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello.lnk", "Shortcut link is missing %v")
 	} else {
-		mustNotExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon")
+		mustNotExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello.lnk")
 	}
 	mustEqual(strings.TrimSpace(readFile("C:/Program Files/hello/install-hook.txt")), "install hook")
 	mustEqual(strings.TrimSpace(readFile("C:/Program Files/hello/install-hook-with-passing-condition.txt")), "install hook with passing condition")
@@ -214,7 +214,7 @@ func mustNotBeInstalled() {
 	mustNotQueryHello(url)
 
 	mustNotExist("C:/Program Files/hello")
-	mustNotExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon")
+	mustNotExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello.lnk")
 
 	mustEnvNotContain("path", `C:\Program Files\hello`)
 	mustEnvEq("some", "")
