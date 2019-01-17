@@ -569,13 +569,11 @@ func generateTemplates(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	err = wixFile.Normalize()
-	if err != nil {
+	if err := wixFile.Normalize(); err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	err = wixFile.RewriteFilePaths(out)
-	if err != nil {
+	if err := wixFile.RewriteFilePaths(out); err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
@@ -693,13 +691,11 @@ func generateWixCommands(c *cli.Context) error {
 		return cli.NewExitError("Cannot proceed, manifest file is incomplete", 1)
 	}
 
-	err = wixFile.Normalize()
-	if err != nil {
+	if err := wixFile.Normalize(); err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	err = wixFile.RewriteFilePaths(out)
-	if err != nil {
+	if err := wixFile.RewriteFilePaths(out); err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
