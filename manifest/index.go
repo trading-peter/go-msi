@@ -214,6 +214,32 @@ func (wixFile *WixManifest) Load(p string) error {
 	return nil
 }
 
+func (wixFile *WixManifest) check() error {
+	for _, hook := range wixFile.Hooks {
+		switch hook.When {
+		case "install", "uninstall", "":
+		default:
+			return fmt.Errorf(`Invalid "when" value in hook: %s`, hook.When)
+		}
+		switch hook.Impersonate {
+		case "yes", "no":
+		default:
+			return fmt.Errorf(`Invalid "impersonate" value in hook: %s`, hook.Impersonate)
+		}
+	}
+	for _, shortcut := range wixFile.Shortcuts {
+		switch shortcut.Location {
+		case "program", "desktop":
+		default:
+			return fmt.Errorf(`Invalid "location" value in shortcut: %s`, shortcut.Location)
+		}
+	}
+	if wixFile.NeedGUID() {
+		return fmt.Errorf(`The manifest needs Guid, To update your file automatically run "go-msi set-guid"`)
+	}
+	return nil
+}
+
 //SetGuids generates and apply guid values appropriately
 func (wixFile *WixManifest) SetGuids(force bool) (bool, error) {
 	updated := false
@@ -434,7 +460,7 @@ func (wixFile *WixManifest) Normalize() error {
 	}
 	wixFile.Info.Size = size >> 10
 
-	return nil
+	return wixFile.check()
 }
 
 func escapeHook(command string) (string, error) {

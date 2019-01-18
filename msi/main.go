@@ -48,18 +48,6 @@ func Main() {
 	app.UsageText = "go-msi <cmd> <options>"
 	app.Commands = []cli.Command{
 		{
-			Name:   "check-json",
-			Usage:  "Check the JSON wix manifest",
-			Action: checkJSON,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "path, p",
-					Value: "wix.json",
-					Usage: "Path to the wix manifest file",
-				},
-			},
-		},
-		{
 			Name:   "check-env",
 			Usage:  "Provide a report about your environment setup",
 			Action: checkEnv,
@@ -371,47 +359,6 @@ func checkEnv(c *cli.Context) error {
 				}
 			}
 		}
-	}
-	return nil
-}
-
-func checkJSON(c *cli.Context) error {
-	path := c.String("path")
-
-	wixFile := manifest.WixManifest{}
-	err := wixFile.Load(path)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
-	}
-
-	for _, hook := range wixFile.Hooks {
-		switch hook.When {
-		case "install", "uninstall", "":
-		default:
-			return cli.NewExitError(`Invalid "when" value in hook: `+hook.When, 1)
-		}
-		switch hook.Impersonate {
-		case "yes", "no":
-		default:
-			return cli.NewExitError(`Invalid "impersonate" value in hook: `+hook.Impersonate, 1)
-		}
-	}
-
-	for _, shortcut := range wixFile.Shortcuts {
-		switch shortcut.Location {
-		case "program", "desktop":
-		default:
-			return cli.NewExitError(`Invalid "location" value in shortcut: `+shortcut.Location, 1)
-		}
-	}
-
-	fmt.Println("The manifest is syntaxically correct !")
-
-	if wixFile.NeedGUID() {
-		fmt.Println("The manifest needs Guid")
-		fmt.Println("To update your file automatically run:")
-		fmt.Println("     go-msi set-guid")
-		return cli.NewExitError("Incomplete manifest file detected", 1)
 	}
 	return nil
 }
