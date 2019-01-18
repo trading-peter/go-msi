@@ -148,6 +148,7 @@ type Environment struct {
 type Shortcut struct {
 	Name        string             `json:"name"`
 	Description string             `json:"description"`
+	Location    string             `json:"location"`
 	Target      string             `json:"target"`
 	WDir        string             `json:"wdir,omitempty"`
 	Arguments   string             `json:"arguments,omitempty"`

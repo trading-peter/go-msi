@@ -328,7 +328,6 @@ func Main() {
 var verReg = regexp.MustCompile(`\s[0-9]+[.][0-9]+[.][0-9]+`)
 
 func checkEnv(c *cli.Context) error {
-
 	for _, b := range []string{"heat", "light", "candle"} {
 		if out, err := util.Exec(b, "-h"); out == "" {
 			fmt.Printf("!!	%v not found: %q\n", b, err)
@@ -395,6 +394,14 @@ func checkJSON(c *cli.Context) error {
 		case "yes", "no":
 		default:
 			return cli.NewExitError(`Invalid "impersonate" value in hook: `+hook.Impersonate, 1)
+		}
+	}
+
+	for _, shortcut := range wixFile.Shortcuts {
+		switch shortcut.Location {
+		case "program", "desktop":
+		default:
+			return cli.NewExitError(`Invalid "location" value in shortcut: `+shortcut.Location, 1)
 		}
 	}
 

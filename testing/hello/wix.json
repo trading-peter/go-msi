@@ -78,6 +78,7 @@
     {
       "name": "hello",
       "description": "hello web server",
+      "location": "program",
       "target": "[INSTALLDIR]hello.exe",
       "wdir": "INSTALLDIR",
       "icon": "ico.ico",
@@ -88,6 +89,15 @@
           "value": "some value"
         }
       ]
+    },
+    {
+      "name": "hello",
+      "description": "hello web server",
+      "location": "desktop",
+      "target": "[INSTALLDIR]hello.exe",
+      "wdir": "INSTALLDIR",
+      "icon": "ico.ico",
+      "condition": "DESKTOPSHORTCUT ~= \"yes\""
     }
   ],
   "choco": {
@@ -157,6 +167,10 @@
     },
     {
       "id": "STARTMENUSHORTCUT",
+      "value": "yes"
+    },
+    {
+      "id": "DESKTOPSHORTCUT",
       "value": "yes"
     },
     {
