@@ -148,6 +148,7 @@ type Environment struct {
 type Shortcut struct {
 	Name        string             `json:"name"`
 	Description string             `json:"description"`
+	Location    string             `json:"location"`
 	Target      string             `json:"target"`
 	WDir        string             `json:"wdir,omitempty"`
 	Arguments   string             `json:"arguments,omitempty"`
@@ -209,6 +210,32 @@ func (wixFile *WixManifest) Load(p string) error {
 	err = json.Unmarshal(dat, &wixFile)
 	if err != nil {
 		return fmt.Errorf("JSON Unmarshal failed with %v", err)
+	}
+	return nil
+}
+
+func (wixFile *WixManifest) check() error {
+	for _, hook := range wixFile.Hooks {
+		switch hook.When {
+		case "install", "uninstall", "":
+		default:
+			return fmt.Errorf(`Invalid "when" value in hook: %s`, hook.When)
+		}
+		switch hook.Impersonate {
+		case "yes", "no":
+		default:
+			return fmt.Errorf(`Invalid "impersonate" value in hook: %s`, hook.Impersonate)
+		}
+	}
+	for _, shortcut := range wixFile.Shortcuts {
+		switch shortcut.Location {
+		case "program", "desktop":
+		default:
+			return fmt.Errorf(`Invalid "location" value in shortcut: %s`, shortcut.Location)
+		}
+	}
+	if wixFile.NeedGUID() {
+		return fmt.Errorf(`The manifest needs Guid, To update your file automatically run "go-msi set-guid"`)
 	}
 	return nil
 }
@@ -433,7 +460,7 @@ func (wixFile *WixManifest) Normalize() error {
 	}
 	wixFile.Info.Size = size >> 10
 
-	return nil
+	return wixFile.check()
 }
 
 func escapeHook(command string) (string, error) {

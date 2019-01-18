@@ -48,18 +48,6 @@ func Main() {
 	app.UsageText = "go-msi <cmd> <options>"
 	app.Commands = []cli.Command{
 		{
-			Name:   "check-json",
-			Usage:  "Check the JSON wix manifest",
-			Action: checkJSON,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "path, p",
-					Value: "wix.json",
-					Usage: "Path to the wix manifest file",
-				},
-			},
-		},
-		{
 			Name:   "check-env",
 			Usage:  "Provide a report about your environment setup",
 			Action: checkEnv,
@@ -328,7 +316,6 @@ func Main() {
 var verReg = regexp.MustCompile(`\s[0-9]+[.][0-9]+[.][0-9]+`)
 
 func checkEnv(c *cli.Context) error {
-
 	for _, b := range []string{"heat", "light", "candle"} {
 		if out, err := util.Exec(b, "-h"); out == "" {
 			fmt.Printf("!!	%v not found: %q\n", b, err)
@@ -372,39 +359,6 @@ func checkEnv(c *cli.Context) error {
 				}
 			}
 		}
-	}
-	return nil
-}
-
-func checkJSON(c *cli.Context) error {
-	path := c.String("path")
-
-	wixFile := manifest.WixManifest{}
-	err := wixFile.Load(path)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
-	}
-
-	for _, hook := range wixFile.Hooks {
-		switch hook.When {
-		case "install", "uninstall", "":
-		default:
-			return cli.NewExitError(`Invalid "when" value in hook: `+hook.When, 1)
-		}
-		switch hook.Impersonate {
-		case "yes", "no":
-		default:
-			return cli.NewExitError(`Invalid "impersonate" value in hook: `+hook.Impersonate, 1)
-		}
-	}
-
-	fmt.Println("The manifest is syntaxically correct !")
-
-	if wixFile.NeedGUID() {
-		fmt.Println("The manifest needs Guid")
-		fmt.Println("To update your file automatically run:")
-		fmt.Println("     go-msi set-guid")
-		return cli.NewExitError("Incomplete manifest file detected", 1)
 	}
 	return nil
 }
@@ -569,13 +523,11 @@ func generateTemplates(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	err = wixFile.Normalize()
-	if err != nil {
+	if err := wixFile.Normalize(); err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	err = wixFile.RewriteFilePaths(out)
-	if err != nil {
+	if err := wixFile.RewriteFilePaths(out); err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
@@ -693,13 +645,11 @@ func generateWixCommands(c *cli.Context) error {
 		return cli.NewExitError("Cannot proceed, manifest file is incomplete", 1)
 	}
 
-	err = wixFile.Normalize()
-	if err != nil {
+	if err := wixFile.Normalize(); err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	err = wixFile.RewriteFilePaths(out)
-	if err != nil {
+	if err := wixFile.RewriteFilePaths(out); err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
 

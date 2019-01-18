@@ -54,14 +54,14 @@ func main() {
 	mustContain(content, "Product: hello -- Installation failed")
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
-	install(msi, version, true, true)
+	install(msi, version, true, true, true)
 
 	packageReinstall := makeCmd("msiexec", "/i", msi, "/q", "/l*v", "log-install.txt")
 	mustExec(packageReinstall, "Package re-installation failed %v")
 	content = readLog("log-install.txt")
 	mustContain(content, "Product: hello -- Configuration completed successfully.")
 	mustContain(content, "Windows Installer reconfigured the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
-	mustBeInstalled(version, true, true)
+	mustBeInstalled(version, true, true, true)
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
 	oldMsi := msi
@@ -79,7 +79,7 @@ func main() {
 	mustFail(packageDowngrade.Exec(), "Package downgrade succeeded")
 	content = readLog("log-install.txt")
 	mustContain(content, "Product: hello -- A newer version of this software is already installed.")
-	mustBeInstalled(version, true, true)
+	mustBeInstalled(version, true, true, true)
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 
 	version = "12.34.5679" // version up
@@ -92,21 +92,24 @@ func main() {
 	)
 	mustExec(pkg, "Packaging failed %v")
 	mustExist(msi, "Package file is missing %v")
-	install(msi, version, true, true)
+	install(msi, version, true, true, true)
 
 	packageUninstall := makeCmd("msiexec", "/x", oldMsi, "/q", "/l*v", "log-uninstall.txt")
 	mustFail(packageUninstall.Exec(), "Old package uninstall succeeded")
 	content = readLog("log-uninstall.txt")
 	mustContain(content, "This action is only valid for products that are currently installed")
-	mustBeInstalled(version, true, true)
+	mustBeInstalled(version, true, true, true)
 	mustSucceed(rmFile("log-uninstall.txt"), "rmfile failed %v")
 
 	uninstall(msi, version)
 
-	install(msi, version, false, true, "STARTMENUSHORTCUT=no")
+	install(msi, version, false, true, true, "STARTMENUSHORTCUT=no")
 	uninstall(msi, version)
 
-	install(msi, version, true, false, "ENVVAR=no")
+	install(msi, version, true, false, true, "DESKTOPSHORTCUT=no")
+	uninstall(msi, version)
+
+	install(msi, version, true, true, false, "ENVVAR=no")
 	uninstall(msi, version)
 
 	version = "0.0.1"
@@ -132,7 +135,7 @@ func main() {
 	chocoInstall := makeCmd("choco", "install", "hello."+version+".nupkg", "-y")
 	mustExec(chocoInstall, "hello choco package install failed %v")
 
-	mustBeInstalled(version, true, true)
+	mustBeInstalled(version, true, true, true)
 
 	chocoUninstall := makeCmd("choco", "uninstall", "hello", "-v", "-d", "-y", "--force")
 	mustExec(chocoUninstall, "hello choco package uninstall failed %v")
@@ -150,13 +153,13 @@ func homedir() string {
 	return usr.HomeDir
 }
 
-func install(msi, version string, shortcut, envvar bool, properties ...string) {
+func install(msi, version string, menuShortcut, desktopShortcut, envvar bool, properties ...string) {
 	packageInstall := makeCmd("msiexec", append([]string{"/i", msi, "/q", "/l*v", "log-install.txt"}, properties...)...)
 	mustExec(packageInstall, "Package installation failed %v")
 	content := readLog("log-install.txt")
 	mustContain(content, "Product: hello -- Installation completed successfully.")
 	mustContain(content, "Windows Installer installed the product. Product Name: hello. Product Version: "+version+". Product Language: 1033. Manufacturer: mh-cbon.")
-	mustBeInstalled(version, shortcut, envvar)
+	mustBeInstalled(version, menuShortcut, desktopShortcut, envvar)
 	mustSucceed(rmFile("log-install.txt"), "rmfile failed %v")
 	mustEqual(strings.TrimSpace(readFile(hookFile)), "hook")
 	mustSucceed(rmFile(hookFile), "rmfile failed %v")
@@ -175,11 +178,13 @@ func uninstall(msi, version string) {
 }
 
 const (
-	url     = "http://localhost:8080/"
-	service = "HelloSvc"
+	url                     = "http://localhost:8080/"
+	service                 = "HelloSvc"
+	menuShortcutLocation    = "C:/ProgramData/Microsoft/Windows/Start Menu/Programs/hello.lnk"
+	desktopShortcutLocation = "C:/Users/Public/Desktop/hello.lnk"
 )
 
-func mustBeInstalled(version string, shortcut, envvar bool) {
+func mustBeInstalled(version string, menuShortcut, desktopShortcut, envvar bool) {
 	mustEnvSuffix("path", `C:\Program Files\hello\`)
 	mustEnvEq("some", "value")
 	if envvar {
@@ -193,10 +198,15 @@ func mustBeInstalled(version string, shortcut, envvar bool) {
 
 	mustExist("C:/Program Files/hello", "Files missing %v")
 	mustExist("C:/Program Files/hello/assets", "Directory missing %v")
-	if shortcut {
-		mustExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon/hello.lnk", "Shortcut link is missing %v")
+	if menuShortcut {
+		mustExist(menuShortcutLocation, "Start menu shortcut is missing %v")
 	} else {
-		mustNotExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon")
+		mustNotExist(menuShortcutLocation)
+	}
+	if desktopShortcut {
+		mustExist(desktopShortcutLocation, "Desktop shortcut is missing %v")
+	} else {
+		mustNotExist(desktopShortcutLocation)
 	}
 	mustEqual(strings.TrimSpace(readFile("C:/Program Files/hello/install-hook.txt")), "install hook")
 	mustEqual(strings.TrimSpace(readFile("C:/Program Files/hello/install-hook-with-passing-condition.txt")), "install hook with passing condition")
@@ -214,7 +224,8 @@ func mustNotBeInstalled() {
 	mustNotQueryHello(url)
 
 	mustNotExist("C:/Program Files/hello")
-	mustNotExist("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/mh-cbon")
+	mustNotExist(menuShortcutLocation)
+	mustNotExist(desktopShortcutLocation)
 
 	mustEnvNotContain("path", `C:\Program Files\hello`)
 	mustEnvEq("some", "")
@@ -319,13 +330,13 @@ func mustSucceed(err error, format ...string) {
 		log.Fatal(err)
 	}
 }
-func mustSucceedDetailed(err error, e interface{}, format ...string) {
+func mustSucceedDetailed(err error, e execer, format string) {
 	if err != nil {
 		if len(format) > 0 {
-			err = fmt.Errorf(format[0], err)
-		} else {
-			err = fmt.Errorf("%v", err)
+			err = fmt.Errorf(format, err)
 		}
+		log.Print(e.Stderr())
+		log.Print(e.Stdout())
 		log.Fatal(err)
 	}
 }
@@ -421,11 +432,8 @@ type execer interface {
 	Stdout() string
 }
 
-func mustExec(e execer, format ...string) {
-	if len(format) < 1 {
-		format = []string{"Exec err: %v"}
-	}
-	mustSucceedDetailed(e.Exec(), e, format[0])
+func mustExec(e execer, format string) {
+	mustSucceedDetailed(e.Exec(), e, format)
 }
 
 type exister interface {
