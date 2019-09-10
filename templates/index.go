@@ -11,8 +11,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/bmatcuk/doublestar"
 	"github.com/mat007/go-msi/manifest"
-	"github.com/mattn/go-zglob"
 )
 
 var funcMap = template.FuncMap{
@@ -44,7 +44,7 @@ var funcMap = template.FuncMap{
 // Find all wxs files in given directory
 func Find(srcDir string, pattern string) ([]string, error) {
 	glob := filepath.Join(srcDir, pattern)
-	return zglob.Glob(glob)
+	return doublestar.Glob(glob)
 }
 
 // GenerateTemplate generates given src template to out file using given manifest
