@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/bmatcuk/doublestar"
 	"github.com/mat007/go-msi/manifest"
 	"github.com/mat007/go-msi/rtf"
 	"github.com/mat007/go-msi/templates"
@@ -434,7 +435,7 @@ func setFiles(c *cli.Context) error {
 
 func glob(dir string, files []string, f func(match string)) error {
 	for _, file := range files {
-		matches, err := filepath.Glob(filepath.Join(dir, file))
+		matches, err := doublestar.Glob(filepath.Join(dir, file))
 		if err != nil {
 			return err
 		}
