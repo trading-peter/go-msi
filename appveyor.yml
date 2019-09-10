@@ -20,8 +20,6 @@ install:
   - set PATH=%WIX%\bin;%PATH%
   - set PATH=%GOPATH%\bin;%PATH%
   - go get -u github.com/mh-cbon/never-fail
-  - go get -u github.com/Masterminds/glide
-  - glide install
 
 before_test:
   # do a manual installation of go-msi from pulled source code
@@ -29,12 +27,6 @@ before_test:
   - set GOARCH=amd64
   - go build -o C:\go-msi\go-msi.exe --ldflags "-X main.Version=%VERSION%" main.go
   - XCOPY /I /E templates C:\go-msi\templates
-  # prepare tests packages
-  - cd testing\hello
-  - glide install
-  - cd ..
-  - glide install
-  - cd ..
   # run tests
   - go run testing\main.go
 
