@@ -19,7 +19,7 @@
       <Package InstallerVersion="200" Compressed="yes" Description="{{.Product}} {{.Version.Display}}"
                Comments="This installs {{.Product}} {{.Version.Display}}" InstallScope="perMachine"/>
 
-      <Media Id="1" Cabinet="product.cab" EmbedCab="yes" {{if gt (.Compression | len) 0}}CompressionLevel="{{.Compression}}"{{end}}/>
+      <MediaTemplate EmbedCab="yes" {{if gt (.Compression | len) 0}}CompressionLevel="{{.Compression}}"{{end}}/>
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of this software is already installed."/>
 
@@ -49,28 +49,37 @@
 
         <Directory Id="$(var.Program_Files)">
             <Directory Id="INSTALLDIR" Name="{{.Product}}">
-                {{range $i, $e := .Files}}
-                <Component Id="ApplicationFiles{{$i}}" Guid="*">
-                    <File Id="ApplicationFile{{$i}}" Source="{{$e.Path}}"/>
-                    {{if $e.Service}}
-                    <ServiceInstall Id="ServiceInstall{{$i}}" Type="ownProcess" Name="{{$e.Service.Name}}" Start="{{$e.Service.Start}}" Account="LocalSystem" ErrorControl="normal"
-                    {{if gt ($e.Service.DisplayName | len) 0}} DisplayName="{{$e.Service.DisplayName}}" {{end}}
-                    {{if gt ($e.Service.Description | len) 0}} Description="{{$e.Service.Description}}" {{end}}
-                    {{if gt ($e.Service.Arguments | len) 0}} Arguments="{{$e.Service.Arguments}}" {{end}}>
-                        {{range $d := $e.Service.Dependencies}}
+                {{define "FILES"}}
+                {{range $f := .}}
+                <Component Id="ApplicationFiles{{$f.ID}}" Guid="*">
+                    <File Id="ApplicationFile{{$f.ID}}" Source="{{$f.Path}}"/>
+                    {{if $f.Service}}
+                    <ServiceInstall Id="ServiceInstall{{$f.ID}}" Type="ownProcess" Name="{{$f.Service.Name}}" Start="{{$f.Service.Start}}" Account="LocalSystem" ErrorControl="normal"
+                    {{if gt ($f.Service.DisplayName | len) 0}} DisplayName="{{$f.Service.DisplayName}}" {{end}}
+                    {{if gt ($f.Service.Description | len) 0}} Description="{{$f.Service.Description}}" {{end}}
+                    {{if gt ($f.Service.Arguments | len) 0}} Arguments="{{$f.Service.Arguments}}" {{end}}>
+                        {{range $d := $f.Service.Dependencies}}
                         <ServiceDependency Id="{{$d}}"/>
                         {{end}}
-                        {{if $e.Service.Delayed}}
+                        {{if $f.Service.Delayed}}
                         <ServiceConfig DelayedAutoStart="yes" OnInstall="yes" OnReinstall ="yes"/>
                         {{end}}
                     </ServiceInstall>
-                    <ServiceControl Id="ServiceControl{{$i}}" Name="{{$e.Service.Name}}" Start="install" Stop="both" Remove="uninstall"/>
+                    <ServiceControl Id="ServiceControl{{$f.ID}}" Name="{{$f.Service.Name}}" Start="install" Stop="both" Remove="uninstall"/>
                     {{end}}
                  </Component>
                 {{end}}
-               {{range $i, $e := .DirNames}}
-               <Directory Id="APPDIR{{$i}}" Name="{{$e}}" />
-               {{end}}
+                {{end}}
+                {{template "FILES" .Directory.Files}}
+                {{define "DIRECTORIES"}}
+                {{range $d := .}}
+                <Directory Id="ApplicationDirectory{{$d.ID}}" Name="{{$d.Name}}">
+                {{template "FILES" $d.Files}}
+                {{template "DIRECTORIES" $d.Directories}}
+                </Directory>
+                {{end}}
+                {{end}}
+                {{template "DIRECTORIES" .Directory.Directories}}
             </Directory>
         </Directory>
 
@@ -159,18 +168,26 @@
          {{range $i, $e := .Environments}}
          <ComponentRef Id="Environments{{$i}}"/>
          {{end}}
-         {{range $i, $e := .Files}}
-         <ComponentRef Id="ApplicationFiles{{$i}}"/>
+         {{$id := 0}}
+         {{define "FILESREF"}}
+         {{range $f := .}}
+         <ComponentRef Id="ApplicationFiles{{$f.ID}}"/>
          {{end}}
+         {{end}}
+         {{template "FILESREF" .Directory.Files}}
+         {{define "DIRECTORIESREF"}}
+         {{range $d := .}}
+         {{template "FILESREF" $d.Files}}
+         {{template "DIRECTORIESREF" $d.Directories}}
+         {{end}}
+         {{end}}
+         {{template "DIRECTORIESREF" .Directory.Directories}}
          {{range $i, $r := .Registries}}
          <ComponentRef Id="RegistryEntries{{$i}}"/>
          {{end}}
          <ComponentRef Id="RegistryEntriesARP"/>
          {{range $i, $e := .Shortcuts}}
          <ComponentRef Id="ApplicationShortcuts{{$i}}"/>
-         {{end}}
-         {{range $i, $e := .Directories}}
-         <ComponentGroupRef Id="AppFiles{{$i}}" />
          {{end}}
       </Feature>
 

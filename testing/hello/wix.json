@@ -30,7 +30,24 @@
     }
   ],
   "directories": [
-    "some/assets"
+    {
+      "name": "assets",
+      "files": [
+        {
+          "path": "some/assets/file1"
+        }
+      ],
+      "directories": [
+        {
+          "name": "dir1",
+          "files": [
+            {
+              "path": "some/assets/dir1/file2"
+            }
+          ]
+        }
+      ]
+    }
   ],
   "environments": [
     {

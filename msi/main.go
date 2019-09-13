@@ -54,22 +54,26 @@ func Main() {
 			Action: checkEnv,
 		},
 		{
-			Name:   "set-files",
-			Usage:  "Adds or removes files from your wix manifest",
-			Action: setFiles,
+			Name:   "add-files",
+			Usage:  "Adds files from your wix manifest",
+			Action: addFiles,
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "path, p",
 					Value: "wix.json",
 					Usage: "Path to the wix manifest file",
 				},
+				cli.StringFlag{
+					Name:  "dir",
+					Usage: "Base directory from which to include files",
+				},
 				cli.StringSliceFlag{
 					Name:  "includes, i",
-					Usage: "Files to include, use of * is permitted",
+					Usage: "Comma separated list of files to include, use of * and ** is permitted",
 				},
 				cli.StringSliceFlag{
 					Name:  "excludes, e",
-					Usage: "Files to exclude, use of * is permitted",
+					Usage: "Comma separated list of files to exclude, use of * and ** is permitted",
 				},
 				cli.BoolFlag{
 					Name:  "test, t",
@@ -317,7 +321,7 @@ func Main() {
 var verReg = regexp.MustCompile(`\s[0-9]+[.][0-9]+[.][0-9]+`)
 
 func checkEnv(c *cli.Context) error {
-	for _, b := range []string{"heat", "light", "candle"} {
+	for _, b := range []string{"light", "candle"} {
 		if out, err := util.Exec(b, "-h"); out == "" {
 			fmt.Printf("!!	%v not found: %q\n", b, err)
 		} else {
@@ -364,12 +368,16 @@ func checkEnv(c *cli.Context) error {
 	return nil
 }
 
-func setFiles(c *cli.Context) error {
+func addFiles(c *cli.Context) error {
 	path := c.String("path")
+	dir := c.String("dir")
 	includes := c.StringSlice("includes")
 	excludes := c.StringSlice("excludes")
 	test := c.Bool("test")
 
+	if dir == "" {
+		return cli.NewExitError(fmt.Errorf("--dir argument is required"), 1)
+	}
 	if len(includes) == 0 {
 		return cli.NewExitError(fmt.Errorf("--includes argument is required"), 1)
 	}
@@ -379,49 +387,26 @@ func setFiles(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	failed := false
-	dir := filepath.Dir(path)
 	out := make(map[string]bool)
 	err = glob(dir, excludes, func(match string) {
 		out[match] = true
-	})
+	}, false)
 	if err != nil {
 		return cli.NewExitError(err, 1)
 	}
-	in := make(map[string]bool)
 	err = glob(dir, includes, func(match string) {
-		if !out[match] {
-			in[match] = true
-			for _, f := range wixFile.Files {
-				if f.Path == match {
-					return
-				}
-			}
-			fmt.Printf("    adding %q\n", match)
-			failed = true
-			if !test {
-				wixFile.Files = append(wixFile.Files, manifest.File{Path: match})
-			}
+		file := manifest.File{Path: filepath.ToSlash(filepath.Join(dir, match))}
+		if out[match] {
+			fmt.Println("    excluding", file.Path)
+			return
 		}
-	})
+		path := strings.Split(match, "/")
+		wixFile.Directory = addFile(wixFile.Directory, file, path)
+	}, true)
 	if err != nil {
 		return cli.NewExitError(err, 1)
 	}
 
-	for i := len(wixFile.Files) - 1; i >= 0; i-- {
-		file := wixFile.Files[i].Path
-		if !in[file] {
-			fmt.Printf("    removing %q\n", file)
-			failed = true
-			if !test {
-				wixFile.Files = append(wixFile.Files[:i], wixFile.Files[i+1:]...)
-			}
-		}
-	}
-
-	if !failed {
-		return nil
-	}
 	if test {
 		return fmt.Errorf("file list not up to date")
 	}
@@ -433,14 +418,41 @@ func setFiles(c *cli.Context) error {
 	return nil
 }
 
-func glob(dir string, files []string, f func(match string)) error {
-	for _, file := range files {
-		matches, err := doublestar.Glob(filepath.Join(dir, file))
-		if err != nil {
-			return err
+func addFile(dir manifest.Directory, file manifest.File, path []string) manifest.Directory {
+	if len(path) == 1 {
+		for _, f := range dir.Files {
+			if f.Path == file.Path {
+				fmt.Println("    skipping", file.Path, "already listed")
+				return dir
+			}
 		}
-		if matches == nil {
-			return fmt.Errorf("file %q does not exist", file)
+		fmt.Println("    adding", file.Path)
+		dir.Files = append(dir.Files, file)
+		return dir
+	}
+	for i, d := range dir.Directories {
+		if d.Name == path[0] {
+			dir.Directories[i] = addFile(d, file, path[1:])
+			return dir
+		}
+	}
+	d := addFile(manifest.Directory{Name: path[0]}, file, path[1:])
+	dir.Directories = append(dir.Directories, d)
+	return dir
+}
+
+func glob(dir string, patterns []string, f func(match string), fail bool) error {
+	for _, pattern := range patterns {
+		var matches []string
+		for _, file := range strings.Split(pattern, ",") {
+			match, err := doublestar.Glob(filepath.Join(dir, file))
+			if err != nil {
+				return err
+			}
+			if fail && match == nil {
+				return fmt.Errorf("files %q do not exist", pattern)
+			}
+			matches = append(matches, match...)
 		}
 		for _, match := range matches {
 			info, err := os.Stat(match)
@@ -450,13 +462,11 @@ func glob(dir string, files []string, f func(match string)) error {
 			if info.IsDir() {
 				continue
 			}
-			if dir != "" {
-				match, err = filepath.Rel(dir, match)
-				if err != nil {
-					return err
-				}
+			rel, err := filepath.Rel(dir, match)
+			if err != nil {
+				return err
 			}
-			f(filepath.ToSlash(match))
+			f(filepath.ToSlash(rel))
 		}
 	}
 	return nil
