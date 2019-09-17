@@ -377,10 +377,27 @@ func rewrite(out, path string) (string, error) {
 	return filepath.Rel(out, filepath.ToSlash(path))
 }
 
+func validateCompression(wixFile *WixManifest) error {
+	if wixFile.Compression == "" {
+		return nil
+	}
+	compressions := []string{"high", "low", "medium", "mszip", "none"}
+	for _, c := range compressions {
+		if c == wixFile.Compression {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid compression %q, must be one of %s", wixFile.Compression, strings.Join(compressions, ", "))
+}
+
 // Normalize appropriately fixes some values within the decoded json.
-// It applies defaults values on the wix/msi property generate the msi package.
+// It applies defaults values on the wix/msi property to generate the msi package.
 // It applies defaults values on the choco property to generate a nuget package.
 func (wixFile *WixManifest) Normalize() error {
+	if err := validateCompression(wixFile); err != nil {
+		return err
+	}
+
 	if wixFile.Version.Display == "" {
 		wixFile.Version.Display = wixFile.Version.User
 	}

@@ -505,6 +505,7 @@ func generateTemplates(c *cli.Context) error {
 	path := c.String("path")
 	src := c.String("src")
 	out := c.String("out")
+	compression := c.String("compression")
 	version := c.String("version")
 	display := c.String("display")
 	license := c.String("license")
@@ -523,6 +524,7 @@ func generateTemplates(c *cli.Context) error {
 		return cli.NewExitError("Cannot proceed, manifest file is incomplete", 1)
 	}
 
+	wixFile.Compression = compression
 	wixFile.Version.User = version
 	wixFile.Version.Display = display
 
@@ -709,6 +711,7 @@ func quickMake(c *cli.Context) error {
 	path := c.String("path")
 	src := c.String("src")
 	out := c.String("out")
+	compression := c.String("compression")
 	version := c.String("version")
 	display := c.String("display")
 	license := c.String("license")
@@ -738,6 +741,7 @@ func quickMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
+	wixFile.Compression = compression
 	wixFile.Version.User = version
 	wixFile.Version.Display = display
 
@@ -857,6 +861,7 @@ func chocoMake(c *cli.Context) error {
 	src := c.String("src")
 	out := c.String("out")
 	input := c.String("input")
+	compression := c.String("compression")
 	version := c.String("version")
 	changelogCmd := c.String("changelog-cmd")
 	keep := c.Bool("keep")
@@ -873,6 +878,7 @@ func chocoMake(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
+	wixFile.Compression = compression
 	wixFile.Version.User = version
 
 	if err := wixFile.Normalize(); err != nil {
