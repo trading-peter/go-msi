@@ -32,8 +32,11 @@ func main() {
 	helloBuild := makeCmd("go", "build", "-o", "build/amd64/hello.exe", "hello.go")
 	mustExec(helloBuild, "hello build failed %v")
 
-	setup := makeCmd("C:/go-msi/go-msi.exe", "set-guid")
-	mustExec(setup, "Packaging setup failed %v")
+	setGuid := makeCmd("C:/go-msi/go-msi.exe", "set-guid")
+	mustExec(setGuid, "Packaging set-guid failed %v")
+
+	setFiles := makeCmd("C:/go-msi/go-msi.exe", "add-files", "--dir", "some", "--includes", "globbed/**", "--excludes", "**/file3")
+	mustExec(setFiles, "Packaging set-files failed %v")
 
 	msi := "hello.msi"
 	version := "12.34.5678"
@@ -198,6 +201,12 @@ func mustBeInstalled(version string, menuShortcut, desktopShortcut, envvar bool)
 
 	mustExist("C:/Program Files/hello", "Files missing %v")
 	mustExist("C:/Program Files/hello/assets", "Directory missing %v")
+	mustExist("C:/Program Files/hello/assets/dir1", "Directory missing %v")
+	mustExist("C:/Program Files/hello/assets/dir1/file2", "File missing %v")
+	mustExist("C:/Program Files/hello/assets/file1", "File missing %v")
+	mustExist("C:/Program Files/hello/globbed", "Directory missing %v")
+	mustExist("C:/Program Files/hello/globbed/file4", "File missing %v")
+	mustNotExist("C:/Program Files/hello/globbed/dir1")
 	if menuShortcut {
 		mustExist(menuShortcutLocation, "Start menu shortcut is missing %v")
 	} else {
@@ -436,10 +445,6 @@ func mustExec(e execer, format string) {
 	mustSucceedDetailed(e.Exec(), e, format)
 }
 
-type exister interface {
-	exists() bool
-}
-
 func mustExist(file string, format ...string) {
 	if len(format) < 1 {
 		format = []string{fmt.Sprintf("mustExist err: %q does not exist, got %%v", file)}
@@ -528,6 +533,7 @@ func (e *cmdExec) String() string {
 
 func (e *cmdExec) Start() error {
 	if !e.hasStarted {
+		fmt.Println("starting", e.Cmd.Path, e.Cmd.Args)
 		e.startErr = e.Cmd.Start()
 	}
 	e.hasStarted = true

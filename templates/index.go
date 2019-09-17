@@ -19,6 +19,9 @@ var funcMap = template.FuncMap{
 	"dec": func(i int) int {
 		return i - 1
 	},
+	"inc": func(i int) int {
+		return i + 1
+	},
 	"cat": func(filename string) string {
 		out, err := ioutil.ReadFile(filename)
 		if err != nil {

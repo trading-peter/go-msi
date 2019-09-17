@@ -17,20 +17,17 @@ import (
 
 // WixManifest is the struct to decode a wix.json file.
 type WixManifest struct {
-	Compression  string         `json:"compression,omitempty"`
-	Product      string         `json:"product"`
-	Company      string         `json:"company"`
-	Version      Version        `json:"-"`
-	License      string         `json:"license,omitempty"`
-	Banner       string         `json:"banner,omitempty"`
-	Dialog       string         `json:"dialog,omitempty"`
-	Icon         string         `json:"icon,omitempty"`
-	Info         *Info          `json:"info,omitempty"`
-	UpgradeCode  string         `json:"upgrade-code"`
-	Files        []File         `json:"files,omitempty"`
-	Directories  []string       `json:"directories,omitempty"`
-	DirNames     []string       `json:"-"`
-	RelDirs      []string       `json:"-"`
+	Compression string  `json:"compression,omitempty"`
+	Product     string  `json:"product"`
+	Company     string  `json:"company"`
+	Version     Version `json:"-"`
+	License     string  `json:"license,omitempty"`
+	Banner      string  `json:"banner,omitempty"`
+	Dialog      string  `json:"dialog,omitempty"`
+	Icon        string  `json:"icon,omitempty"`
+	Info        *Info   `json:"info,omitempty"`
+	UpgradeCode string  `json:"upgrade-code"`
+	Directory
 	Environments []Environment  `json:"environments,omitempty"`
 	Registries   []RegistryItem `json:"registries,omitempty"`
 	Shortcuts    []Shortcut     `json:"shortcuts,omitempty"`
@@ -64,8 +61,62 @@ type Info struct {
 
 // File is the struct to decode a file.
 type File struct {
-	Path    string   `json:"path"`
+	ID      int      `json:"-"`
+	Path    string   `json:"path,omitempty"`
 	Service *Service `json:"service,omitempty"`
+}
+
+// Directory stores a list of files and a list of sub-directories.
+type Directory struct {
+	ID          int         `json:"-"`
+	Name        string      `json:"name,omitempty"`
+	Files       []File      `json:"files,omitempty"`
+	Directories []Directory `json:"directories,omitempty"`
+}
+
+type fileWalker func(file File) (File, error)
+
+func (dir *Directory) walkFiles(f fileWalker) error {
+	var err error
+	dir.Files, dir.Directories, err = walkFiles(dir.Files, dir.Directories, f)
+	return err
+}
+
+func walkFiles(files []File, dirs []Directory, f fileWalker) ([]File, []Directory, error) {
+	for i, file := range files {
+		var err error
+		if files[i], err = f(file); err != nil {
+			return files, dirs, err
+		}
+	}
+	for i := range dirs {
+		if err := dirs[i].walkFiles(f); err != nil {
+			return files, dirs, err
+		}
+	}
+	return files, dirs, nil
+}
+
+type directoryWalker func(dir Directory) (Directory, error)
+
+func (dir *Directory) walkDirectories(f directoryWalker) error {
+	var err error
+	dir.Directories, err = walkDirectories(dir.Directories, f)
+	return err
+}
+
+func walkDirectories(dirs []Directory, f directoryWalker) ([]Directory, error) {
+	for i := range dirs {
+		var err error
+		dirs[i], err = f(dirs[i])
+		if err != nil {
+			return dirs, err
+		}
+		if err := dirs[i].walkDirectories(f); err != nil {
+			return dirs, err
+		}
+	}
+	return dirs, nil
 }
 
 // Service is the struct to decode a service.
@@ -267,7 +318,7 @@ func (wixFile *WixManifest) NeedGUID() bool {
 	return wixFile.UpgradeCode == ""
 }
 
-// RewriteFilePaths Reads Files and Directories of the wix.json file
+// RewriteFilePaths reads files and directories of the wix.json file
 // and turn their values into a relative path to out
 // where out is the path to the wix templates files.
 func (wixFile *WixManifest) RewriteFilePaths(out string) error {
@@ -283,20 +334,27 @@ func (wixFile *WixManifest) RewriteFilePaths(out string) error {
 		}
 		wixFile.License = path
 	}
-	for i, file := range wixFile.Files {
+
+	id := 1
+	if err := wixFile.walkDirectories(func(dir Directory) (Directory, error) {
+		dir.ID = id
+		id++
+		return dir, nil
+	}); err != nil {
+		return err
+	}
+	id = 1
+	if err := wixFile.walkFiles(func(file File) (File, error) {
 		path, err := rewrite(out, file.Path)
 		if err != nil {
-			return err
+			return file, err
 		}
-		wixFile.Files[i].Path = path
-	}
-	for _, dir := range wixFile.Directories {
-		wixFile.DirNames = append(wixFile.DirNames, filepath.Base(dir))
-		path, err := rewrite(out, dir)
-		if err != nil {
-			return err
-		}
-		wixFile.RelDirs = append(wixFile.RelDirs, path)
+		file.Path = path
+		file.ID = id
+		id++
+		return file, nil
+	}); err != nil {
+		return err
 	}
 	for i, s := range wixFile.Shortcuts {
 		if s.Icon != "" {
@@ -316,13 +374,30 @@ func rewrite(out, path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Rel(out, path)
+	return filepath.Rel(out, filepath.ToSlash(path))
+}
+
+func validateCompression(wixFile *WixManifest) error {
+	if wixFile.Compression == "" {
+		return nil
+	}
+	compressions := []string{"high", "low", "medium", "mszip", "none"}
+	for _, c := range compressions {
+		if c == wixFile.Compression {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid compression %q, must be one of %s", wixFile.Compression, strings.Join(compressions, ", "))
 }
 
 // Normalize appropriately fixes some values within the decoded json.
-// It applies defaults values on the wix/msi property generate the msi package.
+// It applies defaults values on the wix/msi property to generate the msi package.
 // It applies defaults values on the choco property to generate a nuget package.
 func (wixFile *WixManifest) Normalize() error {
+	if err := validateCompression(wixFile); err != nil {
+		return err
+	}
+
 	if wixFile.Version.Display == "" {
 		wixFile.Version.Display = wixFile.Version.User
 	}
@@ -430,33 +505,30 @@ func (wixFile *WixManifest) Normalize() error {
 	}
 
 	// Bind services to their file component
-	for i, file := range wixFile.Files {
+	if err := wixFile.walkFiles(func(file File) (File, error) {
 		if file.Service != nil {
-			wixFile.Files[i].Service.Bin = filepath.Base(file.Path)
+			file.Service.Bin = filepath.Base(file.Path)
 			if file.Service.Start == "delayed" {
 				file.Service.Start = "auto"
 				file.Service.Delayed = true
 			}
 		}
+		return file, nil
+	}); err != nil {
+		return err
 	}
 
 	// Compute install size
 	var size int64
-	for _, file := range wixFile.Files {
+	if err := wixFile.walkFiles(func(file File) (File, error) {
 		info, err := os.Stat(file.Path)
 		if err != nil {
-			return err
+			return file, err
 		}
 		size += info.Size()
-	}
-	for _, dir := range wixFile.Directories {
-		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-			size += info.Size()
-			return err
-		})
-		if err != nil {
-			return err
-		}
+		return file, nil
+	}); err != nil {
+		return err
 	}
 	wixFile.Info.Size = size >> 10
 
