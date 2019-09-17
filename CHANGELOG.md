@@ -4,6 +4,8 @@
 
 __Changes__
 
+- Add --compression command-line flag
+- Replace set-files with add-files supporting globbing
 - Add desktop shortcuts
 - Add always called hook type
 - Run impersonated immediate uninstall hooks before install validation
