@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 // WixManifest is the struct to decode a wix.json file.
@@ -306,7 +306,7 @@ func (wixFile *WixManifest) SetGuids(force bool) (bool, error) {
 }
 
 func makeGUID() (string, error) {
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
 	}
