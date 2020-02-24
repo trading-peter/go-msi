@@ -18,12 +18,12 @@
   version = "v1.1.5"
 
 [[projects]]
-  digest = "1:26f2ad8a198a88c3605401186a6be538326e7fbf1f14cb3ef4e0027c4f755f2a"
-  name = "github.com/gofrs/uuid"
+  digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
+  name = "github.com/google/uuid"
   packages = ["."]
   pruneopts = "UT"
-  revision = "d41eeda0759468834c84365a32d1b1ec4264c75f"
-  version = "v3.1.0"
+  revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
+  version = "v1.1.1"
 
 [[projects]]
   digest = "1:caf6db28595425c0e0f2301a00257d11712f65c1878e12cffc42f6b9a9cf3f23"
@@ -92,7 +92,7 @@
   input-imports = [
     "github.com/Masterminds/semver",
     "github.com/bmatcuk/doublestar",
-    "github.com/gofrs/uuid",
+    "github.com/google/uuid",
     "github.com/kardianos/service",
     "github.com/mh-cbon/stringexec",
     "github.com/urfave/cli",
