@@ -6,7 +6,7 @@ import (
 	"text/template"
 
 	"github.com/mattn/go-zglob"
-	"github.com/mh-cbon/go-msi/manifest"
+	"github.com/observiq/go-msi/manifest"
 )
 
 func Find(srcDir string) ([]string, error) {

@@ -4,11 +4,11 @@ Easy way to generate msi package for a Go project.
 
 # Install
 
-Pick an msi package [here](https://github.com/mh-cbon/go-msi/releases) !
+Pick an msi package [here](https://github.com/observiq/go-msi/releases) !
 
 # Requirements
 
-- A windows machine (see [here](https://github.com/mh-cbon/go-msi/blob/master/appveyor-recipe.md) for an appveyor file, see [here](https://github.com/mh-cbon/go-msi/blob/master/unice-recipe.md) for unix friendly users)
+- A windows machine (see [here](https://github.com/observiq/go-msi/blob/master/appveyor-recipe.md) for an appveyor file, see [here](https://github.com/observiq/go-msi/blob/master/unice-recipe.md) for unix friendly users)
 - wix >= 3.10 (may work on older release, but it is untested, feel free to report)
 - you must add wix bin to your PATH
 
@@ -16,7 +16,7 @@ Pick an msi package [here](https://github.com/mh-cbon/go-msi/releases) !
 
 For simple cases,
 
-- Create a `wix.json` file like [this one](https://github.com/mh-cbon/go-msi/blob/master/wix.json)
+- Create a `wix.json` file like [this one](https://github.com/observiq/go-msi/blob/master/wix.json)
 - Apply it guids with `go-msi set-guid`, you must do it once only for each app.
 - Run `go-msi make --msi your_program.msi --version 0.0.2`
 
@@ -35,7 +35,7 @@ If you wonder why `INSTALLDIR`, `[INSTALLDIR]`, this is part of wix rules, pleas
 
 ### wix templates
 
-For simplicity a default install flow is provided, which you can find [here](https://github.com/mh-cbon/go-msi/tree/master/templates)
+For simplicity a default install flow is provided, which you can find [here](https://github.com/observiq/go-msi/tree/master/templates)
 
 You can create a new one for your own personalization,
 you should only take care to reproduce the go templating already

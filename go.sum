@@ -1,0 +1,6 @@
+github.com/mattn/go-zglob v0.0.0-20160607002833-2dbd7f37a45e h1:CKUOoFXxmNBWmFTR23znmpAl2WMnDWd/FMjHuSw6mNg=
+github.com/mattn/go-zglob v0.0.0-20160607002833-2dbd7f37a45e/go.mod h1:9fxibJccNxU2cnpIKLRRFA7zX7qhkJIQWBb449FYHOo=
+github.com/urfave/cli v1.17.0 h1:pxxCYHgqkpprfAbC/5DlBd/n5TQkQpEY/qwERAr4vkE=
+github.com/urfave/cli v1.17.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
+golang.org/x/text v0.0.0-20160622233441-4440cd4f4c2e h1:JjLfLYuSWn2ASYCZ04KfQQ2RAdNBL+Jd654dFSlSOHI=
+golang.org/x/text v0.0.0-20160622233441-4440cd4f4c2e/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mh-cbon/go-msi/guid"
+	"github.com/observiq/go-msi/guid"
 )
 
 type WixManifest struct {

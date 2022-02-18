@@ -26,7 +26,7 @@ vagrant plugin install vagrant-vbguest
 vagrant plugin install vagrant-share
 ```
 
-Initialize a new windows vagrant box on root of your directory with a content similar to [this one](https://github.com/mh-cbon/go-msi/blob/master/Vagrantfile)
+Initialize a new windows vagrant box on root of your directory with a content similar to [this one](https://github.com/observiq/go-msi/blob/master/Vagrantfile)
 
 A that point you should be ready to `up` the machine,
 
@@ -75,12 +75,12 @@ Confirm its up to date by running this command
 vagrant winrm -c "heat.exe -v"
 ```
 
-From your local computer, download [go-msi](https://github.com/mh-cbon/go-msi/releases) msi package,
+From your local computer, download [go-msi](https://github.com/observiq/go-msi/releases) msi package,
 
 ```sh
-wget -O go-msi.msi https://github.com/mh-cbon/go-msi/releases/download/0.0.20/go-msi-0.0.20-x64.msi
+wget -O go-msi.msi https://github.com/observiq/go-msi/releases/download/0.0.20/go-msi-0.0.20-x64.msi
 # or
-curl -O https://github.com/mh-cbon/go-msi/releases/download/0.0.20/go-msi-0.0.20-x64.msi
+curl -O https://github.com/observiq/go-msi/releases/download/0.0.20/go-msi-0.0.20-x64.msi
 ```
 
 Trigger `go-msi` setup on the remote windows machine,

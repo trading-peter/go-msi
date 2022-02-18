@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/mh-cbon/go-msi/util"
+	"github.com/observiq/go-msi/util"
 )
 
 func Make() (string, error) {

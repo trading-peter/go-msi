@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mh-cbon/go-msi/manifest"
+	"github.com/observiq/go-msi/manifest"
 )
 
 func GenerateCmd(wixFile *manifest.WixManifest, templates []string, msiOutFile string, arch string) string {

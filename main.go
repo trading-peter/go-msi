@@ -7,11 +7,11 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/mh-cbon/go-msi/manifest"
-	"github.com/mh-cbon/go-msi/rtf"
-	"github.com/mh-cbon/go-msi/tpls"
-	"github.com/mh-cbon/go-msi/util"
-	"github.com/mh-cbon/go-msi/wix"
+	"github.com/observiq/go-msi/manifest"
+	"github.com/observiq/go-msi/rtf"
+	"github.com/observiq/go-msi/tpls"
+	"github.com/observiq/go-msi/util"
+	"github.com/observiq/go-msi/wix"
 	"github.com/urfave/cli"
 )
 
