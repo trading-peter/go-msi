@@ -10,3 +10,7 @@
 /.glide/
 testing/vendor
 testing/hello/vendor
+
+**/go-msi
+**/*.exe
+**/*.msi

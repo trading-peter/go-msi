@@ -6,13 +6,13 @@ Forked from https://github.com/mh-cbon/go-msi
 
 go-msi leverages the [WiX Toolset](http://wixtoolset.org) to create a Windows MSI package from a JSON description of the product to install.
 
-A demo program can be seen [here](https://github.com/mat007/go-msi/tree/master/testing/hello).
+A demo program can be seen [here](https://github.com/observiq/go-msi/tree/master/testing/hello).
 
 ## Install
 
-Download from the [release page](https://github.com/mat007/go-msi/releases) or use `go get`:
+Download from the [release page](https://github.com/observiq/go-msi/releases) or use `go get`:
 ```sh
-go get github.com/mat007/go-msi
+go get github.com/observiq/go-msi
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ go-msi needs [WiX Toolset](http://wixtoolset.org/) 3.10 or later
 
 ### Workflow
 
-- Create a `wix.json` file like [this one](https://github.com/mat007/go-msi/blob/master/testing/hello/wix.json)
+- Create a `wix.json` file like [this one](https://github.com/observiq/go-msi/blob/master/testing/hello/wix.json)
 - Leave the `upgrade-code` empty or remove it all together
 - Assign a fresh `upgrade-code` with `go-msi set-guid`, this must be done only once
 - Run `go-msi make --msi your_program.msi --version 0.0.1`
@@ -32,7 +32,7 @@ go-msi needs [WiX Toolset](http://wixtoolset.org/) 3.10 or later
 
 The `wix.json` file describes the packaging rules for bundling the product files into the MSI package.
 
-Check the demo [wix.json](https://github.com/mat007/go-msi/blob/master/testing/hello/wix.json) file.
+Check the demo [wix.json](https://github.com/observiq/go-msi/blob/master/testing/hello/wix.json) file.
 
 ### License file
 
