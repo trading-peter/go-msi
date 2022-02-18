@@ -12,7 +12,7 @@ import (
 	"text/template"
 
 	"github.com/bmatcuk/doublestar"
-	"github.com/mat007/go-msi/manifest"
+	"github.com/observiq/go-msi/manifest"
 )
 
 var funcMap = template.FuncMap{

@@ -11,12 +11,12 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/bmatcuk/doublestar"
-	"github.com/mat007/go-msi/manifest"
-	"github.com/mat007/go-msi/rtf"
-	"github.com/mat007/go-msi/templates"
-	"github.com/mat007/go-msi/util"
-	"github.com/mat007/go-msi/wix"
 	"github.com/mh-cbon/stringexec"
+	"github.com/observiq/go-msi/manifest"
+	"github.com/observiq/go-msi/rtf"
+	"github.com/observiq/go-msi/templates"
+	"github.com/observiq/go-msi/util"
+	"github.com/observiq/go-msi/wix"
 	"github.com/urfave/cli"
 )
 
