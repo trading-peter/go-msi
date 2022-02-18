@@ -8,12 +8,8 @@ github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 h1:PJPDf8OUfOK1bb/
 github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1/go.mod h1:1NbS8ALrpOvjt0rHPNLyCIeMtbizbir8U//inJ+zuB8=
 github.com/kardianos/service v0.0.0-20180823001510-8f267d80f2eb h1:2lmKB0a4p/+PnlaRaWHOCh/wQTUHY/FfWZ4b/LqAaoo=
 github.com/kardianos/service v0.0.0-20180823001510-8f267d80f2eb/go.mod h1:10UU/bEkzh2iEN6aYzbevY7J6p03KO5siTxQWXMEerg=
-github.com/mat007/go-msi v0.0.0-20200224144923-4783d3eea8eb h1:7iE5FgBUZ7ksk8vGYmieEdObdPzmYDqhgSKN9HX4mko=
-github.com/mat007/go-msi v0.0.0-20200224144923-4783d3eea8eb/go.mod h1:OMwDhtgI0lgdW+rZE05+/GaAf7vOUn175GP34btu5HI=
 github.com/mh-cbon/stringexec v0.0.0-20160727103857-bc348d279f97 h1:mGgcjK6Gl7q7LrdJPdD9hpzGLzlOhaZHus/sfR2xCbg=
 github.com/mh-cbon/stringexec v0.0.0-20160727103857-bc348d279f97/go.mod h1:SI078kddNqdZJQDEdmObdv8P9mpOlA7zkH2KWmBnsOs=
-github.com/observiq/go-msi v0.0.0-20200224144923-4783d3eea8eb h1:PUV8vqKYnsrv/fRpV2WqUSht2cteCqsFctizs1IgdDw=
-github.com/observiq/go-msi v0.0.0-20200224144923-4783d3eea8eb/go.mod h1:fxB3ViUkxZgKAqqVR8eW5YefT+k1RTDgbnvVjMddX/g=
 github.com/urfave/cli v1.20.0 h1:fDqGv3UG/4jbVl/QkFwEdddtEDjh/5Ov6X+0B/3bPaw=
 github.com/urfave/cli v1.20.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
 golang.org/x/sys v0.0.0-20161108151328-9a2e24c3733e h1:noFVAnJ3Wx72//8KbQX5NXL+mYoL7MPza20zUFW2nMQ=
