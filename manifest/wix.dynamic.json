@@ -1,0 +1,92 @@
+{
+ "product": "",
+ "company": "",
+ "upgrade-code": "",
+ "directories": [
+  {
+   "name": "testdata",
+   "files": [
+    {
+     "path": "testdata/testdata"
+    }
+   ],
+   "directories": [
+    {
+     "name": "path_a",
+     "files": [
+      {
+       "path": "testdata/path_a/a"
+      },
+      {
+       "path": "testdata/path_a/a2"
+      }
+     ]
+    },
+    {
+     "name": "path_b",
+     "files": [
+      {
+       "path": "testdata/path_b/b"
+      }
+     ]
+    },
+    {
+     "name": "path_c",
+     "directories": [
+      {
+       "name": "path_c_sub",
+       "files": [
+        {
+         "path": "testdata/path_c/path_c_sub/csub"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "testdata2",
+   "files": [
+    {
+     "path": "testdata2/testdata"
+    }
+   ],
+   "directories": [
+    {
+     "name": "path_a",
+     "files": [
+      {
+       "path": "testdata2/path_a/a"
+      },
+      {
+       "path": "testdata2/path_a/a2"
+      }
+     ]
+    },
+    {
+     "name": "path_b",
+     "files": [
+      {
+       "path": "testdata2/path_b/b"
+      }
+     ]
+    },
+    {
+     "name": "path_c",
+     "directories": [
+      {
+       "name": "path_c_sub",
+       "files": [
+        {
+         "path": "testdata2/path_c/path_c_sub/csub"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "choco": {}
+}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -251,17 +252,101 @@ func (wixFile *WixManifest) Load(p string) error {
 	if p == "" {
 		p = "wix.json"
 	}
+
 	if _, err := os.Stat(p); os.IsNotExist(err) {
 		return err
 	}
+
 	dat, err := ioutil.ReadFile(p)
 	if err != nil {
 		return fmt.Errorf("JSON ReadFile failed with %v", err)
 	}
+
 	err = json.Unmarshal(dat, &wixFile)
 	if err != nil {
 		return fmt.Errorf("JSON Unmarshal failed with %v", err)
 	}
+
+	// dynamically build wixFile.Directories
+	return wixFile.buildDirectoriesRecursive()
+}
+
+// buildDirectoriesRecursive detects all files and directories nested under a top level
+// directory. The wix.JSON should look similar to:
+//  "directories": [
+//   	{
+//			"name": "config"
+//	    },
+//	    {
+//			"name": "launcher"
+//	    }
+//	],
+func (wixFile *WixManifest) buildDirectoriesRecursive() error {
+	for key, _ := range wixFile.Directories {
+		err := buildDirectories(".", &wixFile.Directories[key])
+		if err != nil {
+			return err
+		}
+	}
+
+	// Write the dynamic config to disk so we can inspect it manually
+	// while debugging builds.
+	b, err := json.MarshalIndent(wixFile, "", " ")
+	if err != nil {
+		return fmt.Errorf("DEBUG: failed to marshal fix config: %v", err)
+	}
+	f, err := os.Create("wix.dynamic.json")
+	if err != nil {
+		return err
+	}
+	if _, err := f.Write(b); err != nil {
+		return fmt.Errorf("failed to write dynamic wix config to disk: %v", err)
+	}
+	return f.Close()
+}
+
+// buildDirectories detects all sub files and directories for the given
+// *Directory. Useful for performing auto detection when there are too
+// many files and directories to specify in the wix.json.
+func buildDirectories(parentPath string, dir *Directory) error {
+	// Get a list of all files and directories
+	p := path.Join(parentPath, dir.Name)
+	list, err := ioutil.ReadDir(p)
+	if err != nil {
+		return fmt.Errorf("failed to read path: %s", p)
+	}
+
+	// Iterate over the list:
+	// Append all files to the directories []Files list
+	// When a directory is detected, call this function again
+	// and grap it's sub directories and files before appending
+	// to the parent directory.
+	for _, sub := range list {
+		// purposely shadowing
+		parentPath := path.Join(parentPath, dir.Name)
+
+		if !sub.IsDir() {
+			subFile := File{
+				Path: path.Join(parentPath, sub.Name()),
+			}
+			dir.Files = append(dir.Files, subFile)
+			continue
+		}
+
+		subDir := Directory{
+			Name: sub.Name(),
+		}
+
+		err := buildDirectories(parentPath, &subDir)
+		if err != nil {
+			return err
+		}
+
+		// When finished building the directory tree, append the directory
+		// to the parent directory.
+		dir.Directories = append(dir.Directories, subDir)
+	}
+
 	return nil
 }
 
