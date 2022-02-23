@@ -115,6 +115,14 @@
       "wdir": "INSTALLDIR",
       "icon": "ico.ico",
       "condition": "DESKTOPSHORTCUT ~= \"yes\""
+    },
+    {
+      "name": "hello",
+      "description": "hello web server",
+      "location": "startup",
+      "target": "[INSTALLDIR]hello.exe",
+      "wdir": "INSTALLDIR",
+      "icon": "ico.ico"
     }
   ],
   "choco": {

@@ -130,11 +130,12 @@
 
         <Directory Id="ProgramMenuFolder"/>
         <Directory Id="DesktopFolder"/>
+        <Directory Id="StartupFolder"/>
 
         {{range $i, $s := .Shortcuts}}
         <Component Id="ApplicationShortcuts{{$i}}" Guid="*">
             <Shortcut Id="ApplicationShortcut{{$i}}" Name="{{$s.Name}}" Description="{{$s.Description}}" Target="{{$s.Target}}" WorkingDirectory="{{$s.WDir}}"
-                Directory={{if eq $s.Location "program"}}"ProgramMenuFolder"{{else}}"DesktopFolder"{{end}}
+                Directory={{if eq $s.Location "program"}}"ProgramMenuFolder"{{ else if eq $s.Location "startup" }}"StartupFolder"{{else}}"DesktopFolder"{{end}}
                 {{if gt ($s.Arguments | len) 0}}Arguments="{{$s.Arguments}}"{{end}}>
                 {{if gt ($s.Icon | len) 0}}<Icon Id="Icon{{$i}}" SourceFile="{{$s.Icon}}"/>{{end}}
                 {{range $j, $p := $s.Properties}}<ShortcutProperty Key="{{$p.Key}}" Value="{{$p.Value}}"/>{{end}}
