@@ -29,7 +29,6 @@ var TPLPATH = "" // non-windows build, use ldflags to tell about that.
 
 // Main exposes the application entry point.
 func Main() {
-
 	if TPLPATH == "" { // built for windows
 		b, err := util.GetBinPath()
 		if err != nil {
@@ -201,6 +200,10 @@ func Main() {
 					Name:  "msi, m",
 					Usage: "Path to write resulting msi file to",
 				},
+				cli.StringFlag{
+					Name:  "lang",
+					Usage: "Culture of the localization strings",
+				},
 			},
 		},
 		{
@@ -246,6 +249,10 @@ func Main() {
 				cli.StringFlag{
 					Name:  "msi, m",
 					Usage: "Path to write resulting msi file to",
+				},
+				cli.StringFlag{
+					Name:  "lang",
+					Usage: "Culture of the localization strings",
 				},
 				cli.StringFlag{
 					Name:  "version",
@@ -627,6 +634,7 @@ func generateWixCommands(c *cli.Context) error {
 	msi := c.String("msi")
 	arch := c.String("arch")
 	bin := c.String("bin")
+	lang := c.String("lang")
 
 	if msi == "" {
 		return cli.NewExitError("--msi parameter must be set", 1)
@@ -680,8 +688,7 @@ func generateWixCommands(c *cli.Context) error {
 			return cli.NewExitError(err.Error(), 1)
 		}
 	}
-
-	cmdStr := wix.GenerateCmd(&wixFile, builtTemplates, msi, arch, bin)
+	cmdStr := wix.GenerateCmd(&wixFile, builtTemplates, msi, arch, bin, lang)
 
 	targetFile := filepath.Join(out, "build.bat")
 	err = ioutil.WriteFile(targetFile, []byte(cmdStr), 0644)
@@ -720,6 +727,7 @@ func quickMake(c *cli.Context) error {
 	arch := c.String("arch")
 	keep := c.Bool("keep")
 	bin := c.String("bin")
+	lang := c.String("lang")
 
 	if msi == "" {
 		return cli.NewExitError("--msi parameter must be set", 1)
@@ -808,7 +816,7 @@ func quickMake(c *cli.Context) error {
 		}
 	}
 
-	cmdStr := wix.GenerateCmd(&wixFile, builtTemplates, msi, arch, bin)
+	cmdStr := wix.GenerateCmd(&wixFile, builtTemplates, msi, arch, bin, lang)
 
 	targetFile := filepath.Join(out, "build.bat")
 	err = ioutil.WriteFile(targetFile, []byte(cmdStr), 0644)

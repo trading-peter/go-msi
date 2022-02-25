@@ -14,9 +14,4 @@ require (
 	golang.org/x/text v0.3.1-0.20180810153555-6e3c4e7365dd
 )
 
-require (
-	github.com/davecgh/go-spew v1.1.0 // indirect
-	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
-)
+require github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 // indirect

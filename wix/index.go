@@ -10,8 +10,7 @@ import (
 var eol = "\r\n"
 
 // GenerateCmd generates required command lines to produce an msi package,
-func GenerateCmd(wixFile *manifest.WixManifest, templates []string, msiOutFile, arch, path string) string {
-
+func GenerateCmd(wixFile *manifest.WixManifest, templates []string, msiOutFile, arch, path, lang string) string {
 	cmd := ""
 
 	cmd += filepath.Join(path, "candle")
@@ -29,6 +28,9 @@ func GenerateCmd(wixFile *manifest.WixManifest, templates []string, msiOutFile, 
 	cmd += eol
 	cmd += filepath.Join(path, "light") + " -ext WixUIExtension -ext WixUtilExtension -sacl -spdb "
 	cmd += " -out " + msiOutFile
+	if lang != "" {
+		cmd += " -cultures:" + lang
+	}
 	for _, tpl := range templates {
 		cmd += " " + strings.Replace(filepath.Base(tpl), ".wxs", ".wixobj", -1)
 	}
