@@ -51,7 +51,12 @@
             <Directory Id="INSTALLDIR" Name="{{.Product}}">
                 {{define "FILES"}}
                 {{range $f := .}}
-                <Component Id="ApplicationFiles{{$f.ID}}" Guid="*">
+                <Component 
+                    Id="ApplicationFiles{{$f.ID}}" 
+                    Guid="*"
+                    Permanent="{{if $f.Permanent}}yes{{else}}no{{end}}"
+                    NeverOverwrite="{{if $f.NeverOverwrite}}yes{{else}}no{{end}}">
+                    
                     <File Id="ApplicationFile{{$f.ID}}" Source="{{$f.Path}}"/>
                     {{if $f.Service}}
                     <ServiceInstall Id="ServiceInstall{{$f.ID}}" Type="ownProcess" Name="{{$f.Service.Name}}" Start="{{$f.Service.Start}}" Account="LocalSystem" ErrorControl="normal"

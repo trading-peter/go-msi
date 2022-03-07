@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBuilDirectories(t *testing.T) {
+func TestBuildDirectories(t *testing.T) {
 	wixFile := &WixManifest{}
 	wixFile.Directories = []Directory{
 		{

@@ -62,9 +62,11 @@ type Info struct {
 
 // File is the struct to decode a file.
 type File struct {
-	ID      int      `json:"-"`
-	Path    string   `json:"path,omitempty"`
-	Service *Service `json:"service,omitempty"`
+	ID             int      `json:"-"`
+	Path           string   `json:"path,omitempty"`
+	Service        *Service `json:"service,omitempty"`
+	NeverOverwrite bool     `json:"never_overwrite,omitempty"`
+	Permanent      bool     `json:"permanent,omitempty"`
 }
 
 // Directory stores a list of files and a list of sub-directories.
