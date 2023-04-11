@@ -14,7 +14,7 @@ func GenerateCmd(wixFile *manifest.WixManifest, templates []string, msiOutFile, 
 
 	cmd := ""
 
-	cmd += filepath.Join(path, "candle")
+	cmd += filepath.Join(path, "candle") + " -ext WixUtilExtension"
 	if arch != "" {
 		if arch == "386" {
 			arch = "x86"
