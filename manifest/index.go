@@ -506,10 +506,12 @@ func (wixFile *WixManifest) Normalize() error {
 			return fmt.Errorf("Failed to parse version '%v', fields must not exceed maximum values of 255.255.65535", wixFile.Version.User)
 		}
 
-		if v.Metadata() != "" {
-			wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d.%d", v.Major(), v.Minor(), v.Patch(), v.Metadata())
+		if n, err := strconv.ParseInt(v.Metadata(), 10, 64); err == nil {
+			// append a metadata version number if present
+			wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d.%d", v.Major(), v.Minor(), v.Patch(), n)
 		} else {
-			wixFile.Version.MSI = v.String()
+			// only use major, minor, and patch if no numeric metadata
+			wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d", v.Major(), v.Minor(), v.Patch())
 		}
 
 		wixFile.Version.Hex = v.Major()<<24 + v.Minor()<<16 + v.Patch()
@@ -656,12 +658,4 @@ func makeRegistryValue(name, typ, value string) RegistryValue {
 		Type:  typ,
 		Value: value,
 	}
-}
-
-// parseMetadata will use
-func parseMetadata(metadata string) (string, error) {
-	if metadata == "" {
-		return "", nil
-	}
-
 }
