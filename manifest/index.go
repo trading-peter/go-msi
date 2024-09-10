@@ -509,12 +509,12 @@ func (wixFile *WixManifest) Normalize() error {
 		if n, err := strconv.ParseInt(v.Metadata(), 10, 64); err == nil {
 			// append a metadata version number if present
 			wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d.%d", v.Major(), v.Minor(), v.Patch(), n)
+			wixFile.Version.Hex = v.Major()<<32 + v.Minor()<<24 + v.Patch()<<8 + n
 		} else {
 			// only use major, minor, and patch if no numeric metadata
 			wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d", v.Major(), v.Minor(), v.Patch())
+			wixFile.Version.Hex = v.Major()<<24 + v.Minor()<<16 + v.Patch()
 		}
-
-		wixFile.Version.Hex = v.Major()<<24 + v.Minor()<<16 + v.Patch()
 	} else {
 		return fmt.Errorf("Failed to parse version '%v', must be either a semantic version or a single build/revision number", wixFile.Version.User)
 	}
