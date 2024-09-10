@@ -275,14 +275,15 @@ func (wixFile *WixManifest) Load(p string) error {
 
 // buildDirectoriesRecursive detects all files and directories nested under a top level
 // directory. The wix.JSON should look similar to:
-//  "directories": [
-//   	{
-//			"name": "config"
-//	    },
-//	    {
-//			"name": "launcher"
-//	    }
-//	],
+//
+//	 "directories": [
+//	  	{
+//				"name": "config"
+//		    },
+//		    {
+//				"name": "launcher"
+//		    }
+//		],
 func (wixFile *WixManifest) buildDirectoriesRecursive() error {
 	for key, _ := range wixFile.Directories {
 		err := buildDirectories(".", &wixFile.Directories[key])
@@ -378,7 +379,7 @@ func (wixFile *WixManifest) check() error {
 	return nil
 }
 
-//SetGuids generates and apply guid values appropriately
+// SetGuids generates and apply guid values appropriately
 func (wixFile *WixManifest) SetGuids(force bool) (bool, error) {
 	updated := false
 	if wixFile.UpgradeCode == "" || force {
@@ -504,7 +505,13 @@ func (wixFile *WixManifest) Normalize() error {
 		if v.Major() > 255 || v.Minor() > 255 || v.Patch() > 65535 {
 			return fmt.Errorf("Failed to parse version '%v', fields must not exceed maximum values of 255.255.65535", wixFile.Version.User)
 		}
-		wixFile.Version.MSI = v.String()
+
+		if v.Metadata() != "" {
+			wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d.%d", v.Major(), v.Minor(), v.Patch(), v.Metadata())
+		} else {
+			wixFile.Version.MSI = v.String()
+		}
+
 		wixFile.Version.Hex = v.Major()<<24 + v.Minor()<<16 + v.Patch()
 	} else {
 		return fmt.Errorf("Failed to parse version '%v', must be either a semantic version or a single build/revision number", wixFile.Version.User)
@@ -649,4 +656,12 @@ func makeRegistryValue(name, typ, value string) RegistryValue {
 		Type:  typ,
 		Value: value,
 	}
+}
+
+// parseMetadata will use
+func parseMetadata(metadata string) (string, error) {
+	if metadata == "" {
+		return "", nil
+	}
+
 }
