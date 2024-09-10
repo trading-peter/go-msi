@@ -513,7 +513,7 @@ func (wixFile *WixManifest) Normalize() error {
 		} else {
 			// only use major, minor, and patch if no numeric metadata
 			wixFile.Version.MSI = fmt.Sprintf("%d.%d.%d", v.Major(), v.Minor(), v.Patch())
-			wixFile.Version.Hex = v.Major()<<24 + v.Minor()<<16 + v.Patch()
+			wixFile.Version.Hex = v.Major()<<32 + v.Minor()<<24 + v.Patch()<<8 + 255
 		}
 	} else {
 		return fmt.Errorf("Failed to parse version '%v', must be either a semantic version or a single build/revision number", wixFile.Version.User)
