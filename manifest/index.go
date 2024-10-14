@@ -365,7 +365,7 @@ func (wixFile *WixManifest) check() error {
 	}
 	for _, shortcut := range wixFile.Shortcuts {
 		switch shortcut.Location {
-		case "program", "desktop", "startup":
+		case "program", "desktop", "startup", "web":
 		default:
 			return fmt.Errorf(`Invalid "location" value in shortcut: %s`, shortcut.Location)
 		}

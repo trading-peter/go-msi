@@ -204,6 +204,10 @@ func Main() {
 					Name:  "lang",
 					Usage: "Culture of the localization strings",
 				},
+				cli.StringFlag{
+					Name:  "langFile",
+					Usage: "File containing the localization strings",
+				},
 			},
 		},
 		{
@@ -253,6 +257,10 @@ func Main() {
 				cli.StringFlag{
 					Name:  "lang",
 					Usage: "Culture of the localization strings",
+				},
+				cli.StringFlag{
+					Name:  "langFile",
+					Usage: "File containing the localization strings",
 				},
 				cli.StringFlag{
 					Name:  "version",
@@ -635,6 +643,7 @@ func generateWixCommands(c *cli.Context) error {
 	arch := c.String("arch")
 	bin := c.String("bin")
 	lang := c.String("lang")
+	langFile := c.String("langFile")
 
 	if msi == "" {
 		return cli.NewExitError("--msi parameter must be set", 1)
@@ -688,7 +697,8 @@ func generateWixCommands(c *cli.Context) error {
 			return cli.NewExitError(err.Error(), 1)
 		}
 	}
-	cmdStr := wix.GenerateCmd(&wixFile, builtTemplates, msi, arch, bin, lang)
+
+	cmdStr := wix.GenerateCmd(&wixFile, builtTemplates, msi, arch, bin, lang, langFile)
 
 	targetFile := filepath.Join(out, "build.bat")
 	err = ioutil.WriteFile(targetFile, []byte(cmdStr), 0644)
@@ -728,6 +738,7 @@ func quickMake(c *cli.Context) error {
 	keep := c.Bool("keep")
 	bin := c.String("bin")
 	lang := c.String("lang")
+	langFile := c.String("langFile")
 
 	if msi == "" {
 		return cli.NewExitError("--msi parameter must be set", 1)
@@ -816,7 +827,7 @@ func quickMake(c *cli.Context) error {
 		}
 	}
 
-	cmdStr := wix.GenerateCmd(&wixFile, builtTemplates, msi, arch, bin, lang)
+	cmdStr := wix.GenerateCmd(&wixFile, builtTemplates, msi, arch, bin, lang, langFile)
 
 	targetFile := filepath.Join(out, "build.bat")
 	err = ioutil.WriteFile(targetFile, []byte(cmdStr), 0644)
